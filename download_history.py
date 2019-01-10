@@ -8,9 +8,11 @@ import yaml
 import requests
 import random
 
+from decimal import Decimal
 from bitshares import BitShares
 from bitshares.account import Account
 from bitshares.amount import Amount
+from bitshares.asset import Asset
 
 log = logging.getLogger(__name__)
 
@@ -199,21 +201,24 @@ def main():
             line_dict['date'] = entry['block_data']['block_time']
             op = entry['operation_history']['op_object']
             
-            sell = Amount(op['pays'], bitshares_instance=bitshares)
-            buy = Amount(op['receives'], bitshares_instance=bitshares)
-            fee = Amount(op['fee'], bitshares_instance=bitshares)
+            sell_asset = Asset(op['pays']['asset_id'], bitshares_instance=bitshares)
+            sell_amount = Decimal(op['pays']['amount']).scaleb(-sell_asset['precision'])
+            buy_asset = Asset(op['receives']['asset_id'], bitshares_instance=bitshares)
+            buy_amount = Decimal(op['receives']['amount']).scaleb(-buy_asset['precision'])
+            fee_asset = Asset(op['fee']['asset_id'], bitshares_instance=bitshares)
+            fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
 
             # Subtract fee from buy_amount
-            if fee.symbol == buy.symbol:
-                buy['amount'] -= fee.amount
+            if fee_asset.symbol == buy_asset.symbol:
+                buy_amount -= fee_amount
 
             line_dict['kind'] = 'Trade'
-            line_dict['sell_cur'] = sell.symbol
-            line_dict['sell_amount'] = sell.amount
-            line_dict['buy_cur'] = buy.symbol
-            line_dict['buy_amount'] = buy.amount
-            line_dict['fee_cur'] = fee.symbol
-            line_dict['fee_amount'] = fee.amount
+            line_dict['sell_cur'] = sell_asset.symbol
+            line_dict['sell_amount'] = sell_amount
+            line_dict['buy_cur'] = buy_asset.symbol
+            line_dict['buy_amount'] = buy_amount
+            line_dict['fee_cur'] = fee_asset.symbol
+            line_dict['fee_amount'] = fee_amount
             line_dict['comment'] = op_id
 
             line = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
