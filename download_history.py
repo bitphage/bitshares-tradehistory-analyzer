@@ -8,8 +8,6 @@ import yaml
 import requests
 import random
 
-from pprint import pprint
-
 from bitshares import BitShares
 from bitshares.account import Account
 from bitshares.amount import Amount
@@ -54,7 +52,6 @@ class Wrapper():
         if kwargs:
             payload.update(kwargs)
 
-        pprint(payload)
         r = requests.get(url, params=payload)
         return r.json()
 
