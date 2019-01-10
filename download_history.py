@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os.path
 import sys
 import argparse
 import logging
@@ -26,6 +27,9 @@ LINE_TEMPLATE = {
                     'mark': -1,
                     'comment': ''
                 }
+
+# CSV format is ccGains generic format
+HEADER = 'Kind,Date,Buy currency,Buy amount,Sell currency,Sell amount,Fee currency,Fee amount,Exchange,Mark,Comment\n'
 
 class Wrapper():
     """ Wrapper for querying bitshares elasticsearch wrapper
@@ -63,6 +67,28 @@ class Wrapper():
         params['operation_type'] = 4
         return self._query(params, *args, **kwargs)
 
+def get_write_point(filename):
+    """ Check csv-file for number of records and last op id
+
+        :param str filename: path to the file to check
+        :return: int, str: number of records and last op id
+    """
+    prev_op_id = None
+    record_num = 0
+
+    if os.path.isfile(filename):
+        line_counter = 0
+        f = open(filename, 'r')
+        for line in f:
+            line_counter += 1
+        f.close()
+
+        prev_op_id = line.split(',')[-1].rstrip('\n')
+        record_num = line_counter - 1
+        log.debug('records: {}, last op id: {}'.format(record_num, prev_op_id))
+
+    return record_num, prev_op_id
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -99,56 +125,75 @@ def main():
     account = Account(args.account, bitshares_instance=bitshares)
     wrapper = Wrapper(args.url, account['id'])
 
-    # CSV format is ccGains generic format
-    header = 'Kind,Date,Buy currency,Buy amount,Sell currency,Sell amount,Fee currency,Fee amount,Exchange,Mark,Comment\n'
-
     ##################
     # Export transfers
     ##################
-    transfers = wrapper.get_transfers()
     filename = 'transfers-{}.csv'.format(account.name)
-    f = open(filename, 'w')
-    f.write(header)
+    record_num, prev_op_id = get_write_point(filename)
+    if not (record_num and prev_op_id):
+        record_num = 0
+        f = open(filename, 'w')
+        f.write(HEADER)
+    else:
+        f = open(filename, 'a')
 
-    for entry in transfers:
-        line_dict = LINE_TEMPLATE
-        line_dict['date'] = entry['block_data']['block_time']
-        op = entry['operation_history']['op_object']
+    history = wrapper.get_transfers(from_=record_num)
+    while history:
+        for entry in history:
+            op_id = entry['account_history']['operation_id']
+            if op_id == prev_op_id:
+                log.warning('op id intersection')
+                continue
 
-        amount = Amount(op['amount_'], bitshares_instance=bitshares)
-        from_account = Account(op['from'], bitshares_instance=bitshares)
-        to_account = Account(op['to'], bitshares_instance=bitshares)
-        # TODO: transfer fee
-        
-        if from_account.name == account.name:
-            line_dict['kind'] = 'Withdrawal'
-            line_dict['sell_cur'] = amount.symbol
-            line_dict['sell_amount'] = amount.amount
-        else:
-            line_dict['kind'] = 'Deposit'
-            line_dict['buy_cur'] = amount.symbol
-            line_dict['buy_amount'] = amount.amount
+            line_dict = LINE_TEMPLATE
+            line_dict['date'] = entry['block_data']['block_time']
+            op = entry['operation_history']['op_object']
 
-        line = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
-                '{mark},{comment}\n'.format(**line_dict))
-        f.write(line)
+            amount = Amount(op['amount_'], bitshares_instance=bitshares)
+            from_account = Account(op['from'], bitshares_instance=bitshares)
+            to_account = Account(op['to'], bitshares_instance=bitshares)
+            fee = Amount(op['fee'], bitshares_instance=bitshares)
+
+            if from_account.name == account.name:
+                line_dict['kind'] = 'Withdrawal'
+                line_dict['sell_cur'] = amount.symbol
+                line_dict['sell_amount'] = amount.amount
+                line_dict['fee_cur'] = fee.symbol
+                line_dict['fee_amount'] = fee.amount
+            else:
+                line_dict['kind'] = 'Deposit'
+                line_dict['buy_cur'] = amount.symbol
+                line_dict['buy_amount'] = amount.amount
+
+            line_dict['comment'] = op_id
+
+            line = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
+                    '{mark},{comment}\n'.format(**line_dict))
+            f.write(line)
+            record_num += 1
+        prev_op_id = op_id
+        history = wrapper.get_transfers(from_=record_num)
     f.close()
 
     ########################
     # Export trading history
     ########################
     filename = 'trades-{}.csv'.format(account.name)
-    f = open(filename, 'w')
-    f.write(header)
+    record_num, prev_op_id = get_write_point(filename)
+    if not (record_num and prev_op_id):
+        record_num = 0
+        f = open(filename, 'w')
+        f.write(HEADER)
+    else:
+        f = open(filename, 'a')
 
-    trades = wrapper.get_trades()
-    prev_op_id = ''
-    counter = 0
-    while trades:
-        for entry in trades:
+    history = wrapper.get_trades(from_=record_num)
+    while history:
+        for entry in history:
             op_id = entry['account_history']['operation_id']
             if op_id == prev_op_id:
                 log.warning('op id intersection')
+                continue
 
             line_dict = LINE_TEMPLATE
             line_dict['date'] = entry['block_data']['block_time']
@@ -170,15 +215,11 @@ def main():
             line = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
                     '{mark},{comment}\n'.format(**line_dict))
             f.write(line)
-            counter += 1
+            record_num += 1
         # Elastic wrapper return only limited amount of items, so iterate until the end
         prev_op_id = op_id
-        #trades = wrapper.get_trades(from_date=line_dict['date'])
-        trades = wrapper.get_trades(from_=counter)
+        history = wrapper.get_trades(from_=record_num)
     f.close()
-
-    # TODO: store operation_id. Count number of records to use `from_`. Do additional comparison by operation_id to
-    # correctly determine from where to continue
 
 if __name__ == '__main__':
     main()
