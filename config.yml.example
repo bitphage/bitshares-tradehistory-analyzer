@@ -1,0 +1,8 @@
+nodes:
+  - wss://api-ru.bts.blckchnd.com
+  - wss://api.bts.blckchnd.com
+  - wss://bitshares.openledger.info/ws
+
+wrappers:
+  - https://wrapper.elasticsearch.bitshares.ws/
+  - http://bts-es.clockwork.gr:5000/

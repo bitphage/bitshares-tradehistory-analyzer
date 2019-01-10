@@ -6,6 +6,7 @@ import argparse
 import logging
 import yaml
 import requests
+import random
 
 from pprint import pprint
 
@@ -98,8 +99,8 @@ def main():
                         help='enable debug output'),
     parser.add_argument('-c', '--config', default='./config.yml',
                         help='specify custom path for config file')
-    parser.add_argument('-u', '--url', default='https://wrapper.elasticsearch.bitshares.ws/',
-                        help='URL of elasticsearch wrapper plugin')
+    parser.add_argument('-u', '--url',
+                        help='override URL of elasticsearch wrapper plugin')
     parser.add_argument('account')
     args = parser.parse_args()
 
@@ -117,13 +118,15 @@ def main():
     with open(args.config, 'r') as ymlfile:
         conf = yaml.load(ymlfile)
 
-    # Known wrappers
-    # https://wrapper.elasticsearch.bitshares.ws/
-    # http://bts-es.clockwork.gr:5000/
-
-    bitshares = BitShares(node=conf['node_bts'])
+    bitshares = BitShares(node=conf['nodes'])
     account = Account(args.account, bitshares_instance=bitshares)
-    wrapper = Wrapper(args.url, account['id'])
+
+    if args.url:
+        wrapper_url = args.url
+    else:
+        wrapper_url = random.choice(conf['wrappers'])
+    log.debug('Using wrapper {}'.format(wrapper_url))
+    wrapper = Wrapper(wrapper_url, account['id'])
 
     ##################
     # Export transfers
