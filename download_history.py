@@ -203,6 +203,10 @@ def main():
             buy = Amount(op['receives'], bitshares_instance=bitshares)
             fee = Amount(op['fee'], bitshares_instance=bitshares)
 
+            # Subtract fee from buy_amount
+            if fee.symbol == buy.symbol:
+                buy['amount'] -= fee.amount
+
             line_dict['kind'] = 'Trade'
             line_dict['sell_cur'] = sell.symbol
             line_dict['sell_amount'] = sell.amount
