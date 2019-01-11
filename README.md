@@ -1,3 +1,16 @@
+Bitshares trading history analyzer
+==================================
+
+This is a set of scripts for analyzing trading history on the [Bitshares DEX](https://bitshares.org) and thus for all
+exchanges running on top ([RuDEX](https://rudex.org/), [Cryptobridge](https://crypto-bridge.org/),
+[Openledger](https://openledger.info/), [SparkDex](https://dex.bitspark.io/) etc).
+
+Supported inventory accounting methods:
+
+- FIFO (first-in/first-out)
+- LIFO (last-in/first-out)
+- LPFO (lowest-price/first-out)
+
 Installation using pipenv
 -------------------------
 
@@ -24,7 +37,8 @@ exit
 Download history
 ----------------
 
-Use `./download_history.py account_name` to get transfers and trading history. Export format is generic ccGains format.
+Use `./download_history.py account_name` to get transfers and trading history. Export format is generic
+[ccGains](https://github.com/probstj/ccGains/) format.
 
 Features:
 
