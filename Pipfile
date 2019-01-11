@@ -4,9 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pyaml = "*"
 requests = "*"
 bitshares = "*"
+ruamel-yaml = "*"
 
 [dev-packages]
 

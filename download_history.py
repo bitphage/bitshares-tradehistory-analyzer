@@ -4,11 +4,11 @@ import os.path
 import sys
 import argparse
 import logging
-import yaml
 import requests
 import random
 import copy
 
+from ruamel.yaml import YAML
 from decimal import Decimal
 from bitshares import BitShares
 from bitshares.account import Account
@@ -122,6 +122,7 @@ def main():
     log.addHandler(handler)
 
     # parse config
+    yaml=YAML(typ="safe")
     with open(args.config, 'r') as ymlfile:
         conf = yaml.load(ymlfile)
 
