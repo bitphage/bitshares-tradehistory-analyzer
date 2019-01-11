@@ -27,7 +27,7 @@ LINE_DICT_TEMPLATE = {
                         'fee_amount': 0,
                         'exchange': 'Bitshares',
                         'mark': -1,
-                        'comment': [],
+                        'comment': '',
                         'order_id': '',
                     }
 
@@ -43,12 +43,13 @@ class Wrapper():
     def __init__(self, url, account_id):
         self.url = url
         self.account_id = account_id
+        self.size = 100
 
     def _query(self, params, *args, **kwargs):
         url = self.url + 'get_account_history'
         payload = {
                     'account_id': self.account_id,
-                    'size': 100,
+                    'size': self.size,
                     'operation_type': 0,
                     'sort_by': 'block_data.block_time',
                     'type': 'data',
@@ -72,27 +73,27 @@ class Wrapper():
         params['operation_type'] = 4
         return self._query(params, *args, **kwargs)
 
-def get_write_point(filename):
+def get_continuation_point(filename):
     """ Check csv-file for number of records and last op id
 
         :param str filename: path to the file to check
-        :return: int, str: number of records and last op id
+        :return: str, str: datetime string of last record and last op id
     """
-    prev_op_id = None
-    record_num = 0
+    dtime = '2010-10-10'
+    last_op_id = None
 
     if os.path.isfile(filename):
-        line_counter = 0
-        f = open(filename, 'r')
-        for line in f:
-            line_counter += 1
-        f.close()
+        with open(filename, 'rb') as fd:
+            # Move reading position some ahead from the EOF
+            fd.seek(-128, os.SEEK_END)
+            # Take last line into list object
+            last_line = fd.readlines()[-1].decode('utf-8').rstrip('\n').split(',')
 
-        prev_op_id = line.split(',')[-1].rstrip('\n')
-        record_num = line_counter - 1
-        log.debug('records: {}, last op id: {}'.format(record_num, prev_op_id))
+        dtime = last_line[1]
+        last_op_id = last_line[-1].split()[-1]
+        log.debug('Last record in {}: {}, with op id: {}'.format(filename, dtime, last_op_id))
 
-    return record_num, prev_op_id
+    return dtime, last_op_id
 
 def main():
 
@@ -136,24 +137,31 @@ def main():
     # Export transfers
     ##################
     filename = 'transfers-{}.csv'.format(account.name)
-    record_num, prev_op_id = get_write_point(filename)
-    if not (record_num and prev_op_id):
+    dtime, last_op_id = get_continuation_point(filename)
+    if not (dtime and last_op_id):
         record_num = 0
         f = open(filename, 'w')
         f.write(HEADER)
     else:
         f = open(filename, 'a')
 
-    history = wrapper.get_transfers(from_=record_num)
+    history = wrapper.get_transfers(from_date=dtime)
     while history:
         for entry in history:
             op_id = entry['account_history']['operation_id']
-            if op_id == prev_op_id:
-                log.warning('op id intersection')
+            op_date = entry['block_data']['block_time']
+            # Skip entries until last_op_id found
+            if last_op_id and op_id != last_op_id:
+                log.debug('skipping entry {}'.format(entry))
+                continue
+            elif last_op_id and op_id == last_op_id:
+                # Ok, last_op_id found, let's start to write entries from the next one
+                last_op_id = None
+                log.debug('skipping entry {}'.format(entry))
                 continue
 
             line_dict = copy.deepcopy(LINE_DICT_TEMPLATE)
-            line_dict['date'] = entry['block_data']['block_time']
+            line_dict['date'] = op_date
             op = entry['operation_history']['op_object']
 
             amount = Amount(op['amount_'], bitshares_instance=bitshares)
@@ -177,32 +185,41 @@ def main():
             line = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
                     '{mark},{comment}\n'.format(**line_dict))
             f.write(line)
-            record_num += 1
-        prev_op_id = op_id
-        history = wrapper.get_transfers(from_=record_num)
+        # Remember last op id for the next chunk
+        last_op_id = op_id
+
+        # Break `while` loop on least history chunk
+        if len(history) < wrapper.size:
+            break
+
+        # Get next data chunk
+        history = wrapper.get_transfers(from_date=op_date)
     f.close()
 
     ########################
     # Export trading history
     ########################
     filename = 'trades-{}.csv'.format(account.name)
-    record_num, prev_op_id = get_write_point(filename)
-    if not (record_num and prev_op_id):
+    dtime, last_op_id = get_continuation_point(filename)
+    if not (dtime and last_op_id):
         record_num = 0
         f = open(filename, 'w')
         f.write(HEADER)
     else:
         f = open(filename, 'a')
 
-    # Todo: use op_id and date to determine continuation point
-
-    history = wrapper.get_trades(from_=record_num)
+    history = wrapper.get_trades(from_date=dtime)
     aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
     while history:
         for entry in history:
             op_id = entry['account_history']['operation_id']
-            if op_id == prev_op_id:
-                log.warning('op id intersection')
+            op_date = entry['block_data']['block_time']
+            # Skip entries until last_op_id found
+            if last_op_id and op_id != last_op_id:
+                log.debug('skipping entry {}'.format(entry))
+                continue
+            elif last_op_id and op_id == last_op_id:
+                last_op_id = None
                 continue
 
             line_dict = copy.deepcopy(LINE_DICT_TEMPLATE)
@@ -227,7 +244,7 @@ def main():
             line_dict['buy_amount'] = buy_amount
             line_dict['fee_cur'] = fee_asset.symbol
             line_dict['fee_amount'] = fee_amount
-            line_dict['comment'].append(op_id)
+            line_dict['comment'] = op_id
             line_dict['order_id'] = op['order_id']
 
             #max_precision = max(sell_asset['precision'], buy_asset['precision'])
@@ -242,15 +259,21 @@ def main():
                 aggregated_line['sell_amount'] += sell_amount
                 aggregated_line['buy_amount'] += buy_amount
                 aggregated_line['fee_amount'] += fee_amount
-                aggregated_line['comment'].append(op_id)
+                aggregated_line['comment'] += ' {}'.format(op_id)
             else:
                 # Need to write aggregated line
                 f.write(LINE_TEMPLATE.format(**aggregated_line))
                 aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
-            record_num += 1
-        # Elastic wrapper return only limited amount of items, so iterate until the end
-        prev_op_id = op_id
-        history = wrapper.get_trades(from_=record_num)
+
+        # Remember last op id for the next chunk
+        last_op_id = op_id
+
+        # Break `while` loop on least history chunk
+        if len(history) < wrapper.size:
+            break
+
+        # Get next data chunk
+        history = wrapper.get_trades(from_date=op_date)
 
     # At the end, write remaining line
     if aggregated_line['order_id']:
