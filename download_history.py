@@ -106,6 +106,8 @@ def main():
                         help='specify custom path for config file')
     parser.add_argument('-u', '--url',
                         help='override URL of elasticsearch wrapper plugin')
+    parser.add_argument('--no-aggregate', action='store_true',
+                        help='do not aggregate trades by same order')
     parser.add_argument('account')
     args = parser.parse_args()
 
@@ -249,6 +251,10 @@ def main():
 
             #max_precision = max(sell_asset['precision'], buy_asset['precision'])
             #line_dict['rate'] = (buy_amount / sell_amount).quantize(Decimal(0).scaleb(-max_precision))
+
+            if args.no_aggregate:
+                f.write(LINE_TEMPLATE.format(**line_dict))
+                continue
 
             if not aggregated_line['order_id']:
                 # Aggregated line is empty, store current entry data
