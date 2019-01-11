@@ -261,9 +261,11 @@ def main():
                 aggregated_line['fee_amount'] += fee_amount
                 aggregated_line['comment'] += ' {}'.format(op_id)
             else:
-                # Need to write aggregated line
+                # Write current aggregated line
                 f.write(LINE_TEMPLATE.format(**aggregated_line))
                 aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
+                # Save current entry into new aggregation object
+                aggregated_line = line_dict
 
         # Remember last op id for the next chunk
         last_op_id = op_id
