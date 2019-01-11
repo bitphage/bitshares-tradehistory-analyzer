@@ -7,6 +7,7 @@ import logging
 import yaml
 import requests
 import random
+import copy
 
 from decimal import Decimal
 from bitshares import BitShares
@@ -16,21 +17,25 @@ from bitshares.asset import Asset
 
 log = logging.getLogger(__name__)
 
-LINE_TEMPLATE = {
-                    'kind': '',
-                    'buy_cur': '',
-                    'buy_amount': 0,
-                    'sell_cur': '',
-                    'sell_amount': 0,
-                    'fee_cur': '',
-                    'fee_amount': 0,
-                    'exchange': 'Bitshares',
-                    'mark': -1,
-                    'comment': ''
-                }
+LINE_DICT_TEMPLATE = {
+                        'kind': '',
+                        'buy_cur': '',
+                        'buy_amount': 0,
+                        'sell_cur': '',
+                        'sell_amount': 0,
+                        'fee_cur': '',
+                        'fee_amount': 0,
+                        'exchange': 'Bitshares',
+                        'mark': -1,
+                        'comment': [],
+                        'order_id': '',
+                    }
 
 # CSV format is ccGains generic format
 HEADER = 'Kind,Date,Buy currency,Buy amount,Sell currency,Sell amount,Fee currency,Fee amount,Exchange,Mark,Comment\n'
+
+LINE_TEMPLATE = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
+                 '{mark},{comment}\n')
 
 class Wrapper():
     """ Wrapper for querying bitshares elasticsearch wrapper
@@ -147,7 +152,7 @@ def main():
                 log.warning('op id intersection')
                 continue
 
-            line_dict = LINE_TEMPLATE
+            line_dict = copy.deepcopy(LINE_DICT_TEMPLATE)
             line_dict['date'] = entry['block_data']['block_time']
             op = entry['operation_history']['op_object']
 
@@ -189,7 +194,10 @@ def main():
     else:
         f = open(filename, 'a')
 
+    # Todo: use op_id and date to determine continuation point
+
     history = wrapper.get_trades(from_=record_num)
+    aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
     while history:
         for entry in history:
             op_id = entry['account_history']['operation_id']
@@ -197,7 +205,7 @@ def main():
                 log.warning('op id intersection')
                 continue
 
-            line_dict = LINE_TEMPLATE
+            line_dict = copy.deepcopy(LINE_DICT_TEMPLATE)
             line_dict['date'] = entry['block_data']['block_time']
             op = entry['operation_history']['op_object']
             
@@ -219,15 +227,34 @@ def main():
             line_dict['buy_amount'] = buy_amount
             line_dict['fee_cur'] = fee_asset.symbol
             line_dict['fee_amount'] = fee_amount
-            line_dict['comment'] = op_id
+            line_dict['comment'].append(op_id)
+            line_dict['order_id'] = op['order_id']
 
-            line = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
-                    '{mark},{comment}\n'.format(**line_dict))
-            f.write(line)
+            #max_precision = max(sell_asset['precision'], buy_asset['precision'])
+            #line_dict['rate'] = (buy_amount / sell_amount).quantize(Decimal(0).scaleb(-max_precision))
+
+            if not aggregated_line['order_id']:
+                # Aggregated line is empty, store current entry data
+                aggregated_line = line_dict
+            elif aggregated_line['order_id'] == op['order_id']:
+                # If selling same asset at the same rate, just aggregate the trades
+                aggregated_line['date'] = line_dict['date']
+                aggregated_line['sell_amount'] += sell_amount
+                aggregated_line['buy_amount'] += buy_amount
+                aggregated_line['fee_amount'] += fee_amount
+                aggregated_line['comment'].append(op_id)
+            else:
+                # Need to write aggregated line
+                f.write(LINE_TEMPLATE.format(**aggregated_line))
+                aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
             record_num += 1
         # Elastic wrapper return only limited amount of items, so iterate until the end
         prev_op_id = op_id
         history = wrapper.get_trades(from_=record_num)
+
+    # At the end, write remaining line
+    if aggregated_line['order_id']:
+        f.write(LINE_TEMPLATE.format(**aggregated_line))
     f.close()
 
 if __name__ == '__main__':
