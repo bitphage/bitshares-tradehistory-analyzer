@@ -145,7 +145,6 @@ def main():
     filename = 'transfers-{}.csv'.format(account.name)
     dtime, last_op_id = get_continuation_point(filename)
     if not (dtime and last_op_id):
-        record_num = 0
         f = open(filename, 'w')
         f.write(HEADER)
     else:
@@ -209,7 +208,6 @@ def main():
     filename = 'trades-{}.csv'.format(account.name)
     dtime, last_op_id = get_continuation_point(filename)
     if not (dtime and last_op_id):
-        record_num = 0
         f = open(filename, 'w')
         f.write(HEADER)
     else:
