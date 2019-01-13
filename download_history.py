@@ -136,7 +136,7 @@ def main():
         wrapper_url = args.url
     else:
         wrapper_url = random.choice(conf['wrappers'])
-    log.debug('Using wrapper {}'.format(wrapper_url))
+    log.info('Using wrapper {}'.format(wrapper_url))
     wrapper = Wrapper(wrapper_url, account['id'])
 
     ##################
