@@ -174,7 +174,7 @@ def main():
             from_account = Account(op['from'], bitshares_instance=bitshares)
             to_account = Account(op['to'], bitshares_instance=bitshares)
             fee = Amount(op['fee'], bitshares_instance=bitshares)
-            log.info('Transfer: {} -> {}, {}'.format(from_account, to_account, amount))
+            log.info('Transfer: {} -> {}, {}'.format(from_account.name, to_account.name, amount))
 
             if from_account.name == account.name:
                 line_dict['kind'] = 'Withdrawal'
