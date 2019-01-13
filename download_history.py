@@ -37,6 +37,9 @@ HEADER = 'Kind,Date,Buy currency,Buy amount,Sell currency,Sell amount,Fee curren
 LINE_TEMPLATE = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
                  '{mark},{comment}\n')
 
+SELL_LOG_TEMPLATE = ('Sold {sell_amount} {sell_cur} for {buy_amount} {buy_cur} @ {price:.{prec}} {buy_cur}/{sell_cur}'
+                     ' ({price_inverted:.{prec}f} {sell_cur}/{buy_cur})')
+
 class Wrapper():
     """ Wrapper for querying bitshares elasticsearch wrapper
     """
@@ -91,7 +94,7 @@ def get_continuation_point(filename):
 
         dtime = last_line[1]
         last_op_id = last_line[-1].split()[-1]
-        log.debug('Last record in {}: {}, with op id: {}'.format(filename, dtime, last_op_id))
+        log.info('Continuing {} from {}, op id: {}'.format(filename, dtime, last_op_id))
 
     return dtime, last_op_id
 
@@ -171,6 +174,7 @@ def main():
             from_account = Account(op['from'], bitshares_instance=bitshares)
             to_account = Account(op['to'], bitshares_instance=bitshares)
             fee = Amount(op['fee'], bitshares_instance=bitshares)
+            log.info('Transfer: {} -> {}, {}'.format(from_account, to_account, amount))
 
             if from_account.name == account.name:
                 line_dict['kind'] = 'Withdrawal'
@@ -249,11 +253,12 @@ def main():
             line_dict['fee_amount'] = fee_amount
             line_dict['comment'] = op_id
             line_dict['order_id'] = op['order_id']
-
-            #max_precision = max(sell_asset['precision'], buy_asset['precision'])
-            #line_dict['rate'] = (buy_amount / sell_amount).quantize(Decimal(0).scaleb(-max_precision))
+            line_dict['price'] = buy_amount / sell_amount
+            line_dict['price_inverted'] = sell_amount / buy_amount
+            line_dict['prec'] = max(sell_asset['precision'], buy_asset['precision'])
 
             if args.no_aggregate:
+                log.info(SELL_LOG_TEMPLATE.format(**line_dict))
                 f.write(LINE_TEMPLATE.format(**line_dict))
                 continue
 
@@ -267,7 +272,10 @@ def main():
                 aggregated_line['buy_amount'] += buy_amount
                 aggregated_line['fee_amount'] += fee_amount
                 aggregated_line['comment'] += ' {}'.format(op_id)
+                aggregated_line['price'] = aggregated_line['buy_amount'] / aggregated_line['sell_amount']
+                aggregated_line['price_inverted'] = aggregated_line['sell_amount'] / aggregated_line['buy_amount']
             else:
+                log.info(SELL_LOG_TEMPLATE.format(**line_dict))
                 # Write current aggregated line
                 f.write(LINE_TEMPLATE.format(**aggregated_line))
                 aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
@@ -286,6 +294,7 @@ def main():
 
     # At the end, write remaining line
     if aggregated_line['order_id']:
+        log.info(SELL_LOG_TEMPLATE.format(**aggregated_line))
         f.write(LINE_TEMPLATE.format(**aggregated_line))
     f.close()
 
