@@ -253,9 +253,17 @@ def main():
             line_dict['fee_amount'] = fee_amount
             line_dict['comment'] = op_id
             line_dict['order_id'] = op['order_id']
-            line_dict['price'] = buy_amount / sell_amount
-            line_dict['price_inverted'] = sell_amount / buy_amount
             line_dict['prec'] = max(sell_asset['precision'], buy_asset['precision'])
+
+            # Prevent division by zero
+            price = Decimal('0')
+            price_inverted = Decimal('0')
+            if sell_amount and buy_amount:
+                price = buy_amount / sell_amount
+                price_inverted = sell_amount / buy_amount
+
+            line_dict['price'] = price
+            line_dict['price_inverted'] = price_inverted
 
             if args.no_aggregate:
                 log.info(SELL_LOG_TEMPLATE.format(**line_dict))
