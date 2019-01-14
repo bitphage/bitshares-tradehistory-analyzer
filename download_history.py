@@ -87,10 +87,14 @@ def get_continuation_point(filename):
 
     if os.path.isfile(filename):
         with open(filename, 'rb') as fd:
-            # Move reading position some ahead from the EOF
-            fd.seek(-128, os.SEEK_END)
+            # Move reading position 2 bytes before EOF
+            fd.seek(-2, os.SEEK_END)
+            # Jump backward until EOL found
+            while fd.read(1) != b"\n":
+                fd.seek(-2, os.SEEK_CUR)
+
             # Take last line into list object
-            last_line = fd.readlines()[-1].decode('utf-8').rstrip('\n').split(',')
+            last_line = fd.readline().decode('utf-8').rstrip('\n').split(',')
 
         dtime = last_line[1]
         last_op_id = last_line[-1].split()[-1]
