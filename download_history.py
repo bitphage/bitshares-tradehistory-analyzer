@@ -105,8 +105,8 @@ def get_continuation_point(filename):
 def main():
 
     parser = argparse.ArgumentParser(
-            description='',
-            epilog='Report bugs to: ')
+            description='Export bitshares transfer and trading history for an account',
+            epilog='Report bugs to: https://github.com/bitfag/bitshares-tradehistory-analyzer/issues')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='enable debug output'),
     parser.add_argument('-c', '--config', default='./config.yml',
