@@ -243,6 +243,8 @@ def main():
             fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
 
             # Subtract fee from buy_amount
+            # For ccgains, any fees for the transaction should already have been substracted from *amount*, but included
+            # in *cost*.
             if fee_asset.symbol == buy_asset.symbol:
                 buy_amount -= fee_amount
 
