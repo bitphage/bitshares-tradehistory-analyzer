@@ -11,22 +11,15 @@ Supported inventory accounting methods:
 - LIFO (last-in/first-out)
 - LPFO (lowest-price/first-out)
 
+**Note:** this is a beta software. Feel free to report bugs.
+
 Installation using pipenv
 -------------------------
 
 1. Install [pipenv](https://docs.pipenv.org/).
-2. Run the following code
-
-```
-pipenv install
-```
-
-Running
--------
-
-1. Prepare working environment using virtualenv (see above)
-2. Copy `common.yml.example` to `common.yml` and change variables according to your needs
-3. Run the scripts:
+2. Run `pipenv install` to install the dependencies
+3. Copy `common.yml.example` to `common.yml` and change variables according to your needs
+4. Now you're ready to run scripts:
 
 ```
 pipenv shell
@@ -34,11 +27,15 @@ pipenv shell
 exit
 ```
 
-Download history
-----------------
+Usage
+=====
+
+Step one: export transfers and trading history
+----------------------------------------------
 
 Use `./download_history.py account_name` to get transfers and trading history. Export format is generic
-[ccGains](https://github.com/probstj/ccGains/) format.
+[ccGains](https://github.com/probstj/ccGains/) format. After running this script you'll get csv files with exported
+history.
 
 Features:
 
@@ -49,3 +46,17 @@ Features:
 - The script can continue previously exported data from the previous point, e.g. download fresh history and append it to
   the existing files
 - Fixed-point math is used to maintain strict precision in records
+
+Step two: analyze history
+-------------------------
+
+Use `./analyzer.py base_currency account_name` to analyze history. After running you'll get reports in pdf format and
+status-xxx.json file. Status file will be used as cache later when you'll need to analyze fresh data.
+
+Features:
+
+- `--mode` flag let you specify accounting mode you wish to use (FIFO/LIFO/LPFO)
+- `--precision` flag is for defining base currency precision in reports. By default, precision is set to handle fiat
+  currencies, so precision is 2 (numbers in 0.00 format). If you need to analyze BTC:XXX markets, use `--precision 8`
+- `--year` option let you limit reporting year. This is obvious, no need to generate full report each time while you
+  already have a reports for previous years.
