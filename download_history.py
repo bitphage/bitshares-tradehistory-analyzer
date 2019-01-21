@@ -64,6 +64,7 @@ class Wrapper():
             payload.update(kwargs)
 
         r = requests.get(url, params=payload)
+        r.raise_for_status()
         return r.json()
 
     def get_transfers(self, *args, **kwargs):
