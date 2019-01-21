@@ -284,8 +284,14 @@ def main():
                 aggregated_line['buy_amount'] += buy_amount
                 aggregated_line['fee_amount'] += fee_amount
                 aggregated_line['comment'] += ' {}'.format(op_id)
-                aggregated_line['price'] = aggregated_line['buy_amount'] / aggregated_line['sell_amount']
-                aggregated_line['price_inverted'] = aggregated_line['sell_amount'] / aggregated_line['buy_amount']
+                # Prevent division by zero
+                price = Decimal('0')
+                price_inverted = Decimal('0')
+                if aggregated_line['sell_amount'] and aggregated_line['buy_amount']:
+                    price = aggregated_line['buy_amount'] / aggregated_line['sell_amount']
+                    price_inverted = aggregated_line['sell_amount'] / aggregated_line['buy_amount']
+                aggregated_line['price'] = price
+                aggregated_line['price_inverted'] = price_inverted
             else:
                 log.info(SELL_LOG_TEMPLATE.format(**line_dict))
                 # Write current aggregated line
