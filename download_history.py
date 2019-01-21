@@ -46,7 +46,7 @@ class Wrapper():
     def __init__(self, url, account_id):
         self.url = url
         self.account_id = account_id
-        self.size = 100
+        self.size = 200
 
     def _query(self, params, *args, **kwargs):
         url = self.url + 'get_account_history'
