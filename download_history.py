@@ -85,7 +85,7 @@ def get_continuation_point(filename):
     dtime = '2010-10-10'
     last_op_id = None
 
-    if os.path.isfile(filename):
+    if os.path.isfile(filename) and os.path.getsize(filename) > 0:
         with open(filename, 'rb') as fd:
             # Move reading position 2 bytes before EOF
             fd.seek(-2, os.SEEK_END)
