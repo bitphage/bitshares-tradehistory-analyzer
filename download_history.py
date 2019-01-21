@@ -91,7 +91,11 @@ def get_continuation_point(filename):
             fd.seek(-2, os.SEEK_END)
             # Jump backward until EOL found
             while fd.read(1) != b"\n":
-                fd.seek(-2, os.SEEK_CUR)
+                try:
+                    fd.seek(-2, os.SEEK_CUR)
+                except OSError:
+                    # Probably file is just one-line
+                    return dtime, last_op_id
 
             # Take last line into list object
             last_line = fd.readline().decode('utf-8').rstrip('\n').split(',')
