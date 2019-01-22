@@ -66,7 +66,7 @@ def main():
     th.append_csv('transfers-{}.csv'.format(args.account))
     th.append_csv('trades-{}.csv'.format(args.account))
 
-    status_filename = 'status-{}-{}.json'.format(args.account, args.mode)
+    status_filename = 'status-{}-{}-{}.json'.format(args.account, args.mode, args.base_currency)
     if os.path.isfile(status_filename):
         bf.load(status_filename)
 
