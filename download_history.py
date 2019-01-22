@@ -54,7 +54,7 @@ class Wrapper():
                     'account_id': self.account_id,
                     'size': self.size,
                     'operation_type': 0,
-                    'sort_by': 'block_data.block_time',
+                    'sort_by': 'account_history.sequence',
                     'type': 'data',
                     'agg_field': 'operation_type'
                     }
