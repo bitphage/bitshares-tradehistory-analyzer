@@ -7,6 +7,8 @@ import os.path
 import argparse
 import ccgains
 
+from lib.helper import TradeHistory
+
 logger = logging.getLogger('ccgains')
 logger.setLevel(logging.DEBUG)
 # This is my highest logger, don't propagate to root logger:
@@ -60,7 +62,7 @@ def main():
     args = parser.parse_args()
 
     bf = ccgains.BagQueue(args.base_currency, None, mode=args.mode)
-    th = ccgains.TradeHistory()
+    th = TradeHistory()
     th.append_csv('transfers-{}.csv'.format(args.account))
     th.append_csv('trades-{}.csv'.format(args.account))
 
