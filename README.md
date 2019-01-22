@@ -13,6 +13,21 @@ Supported inventory accounting methods:
 
 **Note:** this is a beta software. Feel free to report bugs.
 
+Limitations
+-----------
+
+* Blockchain fees are currently not taken into account (market fees are correctly counted). Blockhain fees are fees
+  charged by the blockchain itself, like transfer fee, fee for creating limit order etc.
+* Analyzer is not intended to generate tax reports, it's main purpose is to evaluate strategy performance. Origianlly
+  ccgains library requires historic data to estimate profits for trades not involving BASE currency. For example, your
+  base currency is USD, you bought BTC and than trading BTS/BTC pair. Such trades will not show any profits. Imagine
+  finally you got more amount of BTC than initially and then you sold BTC for USD. This is where finally you will see
+  the profits.
+* Another ccgains assumption is that if you deposited some quote currency and sold it for base currency, all obtained
+  amount will be considered as a profit. Because we primarily interesting in evaluating strategy performance, we
+  considering profit as a result of buy+sell only. So such deposited and then sold currency will be counted for 0
+  profit.
+
 Installation using pipenv
 -------------------------
 
