@@ -31,8 +31,19 @@ Limitations
 Installation using pipenv
 -------------------------
 
-1. Make sure you have libssl-dev installed.
-2. Install [pipenv](https://docs.pipenv.org/).
+1. Make sure you have installed required packages: `apt-get install gcc make libssl-dev`
+2. Install [pipenv](https://docs.pipenv.org/)
+
+```
+# Install pip and pipenv
+sudo apt install python3-pip python3-dev
+pip3 install --user pipenv
+
+# Add pipenv (and other python scripts) to PATH
+echo "PATH=$HOME/.local/bin:$PATH" >> ~/.bashrc
+source ~/.bashrc
+```
+
 3. Run `pipenv install` to install the dependencies
 4. Copy `common.yml.example` to `common.yml` and change variables according to your needs
 5. Now you're ready to run scripts:
