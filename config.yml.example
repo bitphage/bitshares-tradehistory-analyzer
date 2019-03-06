@@ -6,3 +6,4 @@ nodes:
 wrappers:
   - https://wrapper.elasticsearch.bitshares.ws/
   - http://bts-es.clockwork.gr:5000/
+  - https://explorer.bitshares-kibana.info/
