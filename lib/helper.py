@@ -211,7 +211,10 @@ class BagQueue(ccgains.BagQueue):
             # fee-corrected proceeds for this partial sale:
             corrproc = thisproc * (1 - fee_ratio)
             # profit for this partial sale (not short term only):
-            prof = corrproc - bcost
+            # XXX: we considering profit as a result of buy+sell only
+            prof = 0
+            if bcost:
+                prof = corrproc - bcost
 
             log.info("Profits in this transaction:\n"
                  "    Original bag cost: %.3f %s (Price %.8f %s/%s)\n"
