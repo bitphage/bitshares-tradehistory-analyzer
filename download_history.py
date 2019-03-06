@@ -18,31 +18,37 @@ from bitshares.asset import Asset
 log = logging.getLogger(__name__)
 
 LINE_DICT_TEMPLATE = {
-                        'kind': '',
-                        'buy_cur': '',
-                        'buy_amount': 0,
-                        'sell_cur': '',
-                        'sell_amount': 0,
-                        'fee_cur': '',
-                        'fee_amount': 0,
-                        'exchange': 'Bitshares',
-                        'mark': -1,
-                        'comment': '',
-                        'order_id': '',
-                    }
+    'kind': '',
+    'buy_cur': '',
+    'buy_amount': 0,
+    'sell_cur': '',
+    'sell_amount': 0,
+    'fee_cur': '',
+    'fee_amount': 0,
+    'exchange': 'Bitshares',
+    'mark': -1,
+    'comment': '',
+    'order_id': '',
+}
 
 # CSV format is ccGains generic format
 HEADER = 'Kind,Date,Buy currency,Buy amount,Sell currency,Sell amount,Fee currency,Fee amount,Exchange,Mark,Comment\n'
 
-LINE_TEMPLATE = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
-                 '{mark},{comment}\n')
+LINE_TEMPLATE = (
+    '{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
+    '{mark},{comment}\n'
+)
 
-SELL_LOG_TEMPLATE = ('Sold {sell_amount} {sell_cur} for {buy_amount} {buy_cur} @ {price:.{prec}} {buy_cur}/{sell_cur}'
-                     ' ({price_inverted:.{prec}f} {sell_cur}/{buy_cur})')
+SELL_LOG_TEMPLATE = (
+    'Sold {sell_amount} {sell_cur} for {buy_amount} {buy_cur} @ {price:.{prec}} {buy_cur}/{sell_cur}'
+    ' ({price_inverted:.{prec}f} {sell_cur}/{buy_cur})'
+)
 
-class Wrapper():
+
+class Wrapper:
     """ Wrapper for querying bitshares elasticsearch wrapper
     """
+
     def __init__(self, url, account_id):
         self.url = url
         self.account_id = account_id
@@ -51,13 +57,13 @@ class Wrapper():
     def _query(self, params, *args, **kwargs):
         url = self.url + 'get_account_history'
         payload = {
-                    'account_id': self.account_id,
-                    'size': self.size,
-                    'operation_type': 0,
-                    'sort_by': 'account_history.sequence',
-                    'type': 'data',
-                    'agg_field': 'operation_type'
-                    }
+            'account_id': self.account_id,
+            'size': self.size,
+            'operation_type': 0,
+            'sort_by': 'account_history.sequence',
+            'type': 'data',
+            'agg_field': 'operation_type',
+        }
         payload.update(params)
 
         if kwargs:
@@ -76,6 +82,7 @@ class Wrapper():
         params = {}
         params['operation_type'] = 4
         return self._query(params, *args, **kwargs)
+
 
 def get_continuation_point(filename):
     """ Check csv-file for number of records and last op id
@@ -107,19 +114,30 @@ def get_continuation_point(filename):
 
     return dtime, last_op_id
 
+
 def main():
 
     parser = argparse.ArgumentParser(
-            description='Export bitshares transfer and trading history for an account',
-            epilog='Report bugs to: https://github.com/bitfag/bitshares-tradehistory-analyzer/issues')
-    parser.add_argument('-d', '--debug', action='store_true',
-                        help='enable debug output'),
-    parser.add_argument('-c', '--config', default='./config.yml',
-                        help='specify custom path for config file')
-    parser.add_argument('-u', '--url',
-                        help='override URL of elasticsearch wrapper plugin')
-    parser.add_argument('--no-aggregate', action='store_true',
-                        help='do not aggregate trades by same order')
+        description='Export bitshares transfer and trading history for an account',
+        epilog='Report bugs to: https://github.com/bitfag/bitshares-tradehistory-analyzer/issues',
+    )
+    parser.add_argument(
+        '-d', '--debug', action='store_true', help='enable debug output'
+    ),
+    parser.add_argument(
+        '-c',
+        '--config',
+        default='./config.yml',
+        help='specify custom path for config file',
+    )
+    parser.add_argument(
+        '-u', '--url', help='override URL of elasticsearch wrapper plugin'
+    )
+    parser.add_argument(
+        '--no-aggregate',
+        action='store_true',
+        help='do not aggregate trades by same order',
+    )
     parser.add_argument('account')
     args = parser.parse_args()
 
@@ -134,7 +152,7 @@ def main():
     log.addHandler(handler)
 
     # parse config
-    yaml=YAML(typ="safe")
+    yaml = YAML(typ="safe")
     with open(args.config, 'r') as ymlfile:
         conf = yaml.load(ymlfile)
 
@@ -182,7 +200,11 @@ def main():
             from_account = Account(op['from'], bitshares_instance=bitshares)
             to_account = Account(op['to'], bitshares_instance=bitshares)
             fee = Amount(op['fee'], bitshares_instance=bitshares)
-            log.info('Transfer: {} -> {}, {}'.format(from_account.name, to_account.name, amount))
+            log.info(
+                'Transfer: {} -> {}, {}'.format(
+                    from_account.name, to_account.name, amount
+                )
+            )
 
             if from_account.name == account.name:
                 line_dict['kind'] = 'Withdrawal'
@@ -197,8 +219,10 @@ def main():
 
             line_dict['comment'] = op_id
 
-            line = ('{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
-                    '{mark},{comment}\n'.format(**line_dict))
+            line = (
+                '{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
+                '{mark},{comment}\n'.format(**line_dict)
+            )
             f.write(line)
         # Remember last op id for the next chunk
         last_op_id = op_id
@@ -240,11 +264,13 @@ def main():
             line_dict = copy.deepcopy(LINE_DICT_TEMPLATE)
             line_dict['date'] = entry['block_data']['block_time']
             op = entry['operation_history']['op_object']
-            
+
             sell_asset = Asset(op['pays']['asset_id'], bitshares_instance=bitshares)
             sell_amount = Decimal(op['pays']['amount']).scaleb(-sell_asset['precision'])
             buy_asset = Asset(op['receives']['asset_id'], bitshares_instance=bitshares)
-            buy_amount = Decimal(op['receives']['amount']).scaleb(-buy_asset['precision'])
+            buy_amount = Decimal(op['receives']['amount']).scaleb(
+                -buy_asset['precision']
+            )
             fee_asset = Asset(op['fee']['asset_id'], bitshares_instance=bitshares)
             fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
 
@@ -294,8 +320,12 @@ def main():
                 price = Decimal('0')
                 price_inverted = Decimal('0')
                 if aggregated_line['sell_amount'] and aggregated_line['buy_amount']:
-                    price = aggregated_line['buy_amount'] / aggregated_line['sell_amount']
-                    price_inverted = aggregated_line['sell_amount'] / aggregated_line['buy_amount']
+                    price = (
+                        aggregated_line['buy_amount'] / aggregated_line['sell_amount']
+                    )
+                    price_inverted = (
+                        aggregated_line['sell_amount'] / aggregated_line['buy_amount']
+                    )
                 aggregated_line['price'] = price
                 aggregated_line['price_inverted'] = price_inverted
             else:
@@ -321,6 +351,7 @@ def main():
         log.info(SELL_LOG_TEMPLATE.format(**aggregated_line))
         f.write(LINE_TEMPLATE.format(**aggregated_line))
     f.close()
+
 
 if __name__ == '__main__':
     main()
