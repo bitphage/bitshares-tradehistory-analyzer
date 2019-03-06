@@ -114,7 +114,7 @@ def main():
         formatters = {'Purchase cost': btc_formatter, 'Proceeds': btc_formatter, 'Profit': btc_formatter}
 
     bf.report.export_report_to_pdf(
-        'Report-{}-{}.pdf'.format(args.account, args.mode),
+        'Report-{}-{}-{}.pdf'.format(args.account, args.mode, args.year),
         date_precision='D', combine=True,
         custom_column_names=my_column_names,
         custom_formatters=formatters,
@@ -123,7 +123,7 @@ def main():
     )
 
     bf.report.export_extended_report_to_pdf(
-        'Details-{}-{}.pdf'.format(args.account, args.mode),
+        'Details-{}-{}-{}.pdf'.format(args.account, args.mode, args.year),
         date_precision='S', combine=False,
         font_size=10,
         year=args.year,
