@@ -16,7 +16,7 @@ Supported inventory accounting methods:
 Limitations
 -----------
 
-* Blockchain fees are currently not taken into account (market fees are correctly counted). Blockhain fees are fees
+* Blockchain fees are currently not taken into account (market fees are correctly counted). Blockchain fees are fees
   charged by the blockchain itself, like transfer fee, fee for creating limit order etc.
 * Analyzer is not intended to generate tax reports, it's main purpose is to evaluate strategy performance. Origianlly
   ccgains library requires historic data to estimate profits for trades not involving BASE currency. For example, your
