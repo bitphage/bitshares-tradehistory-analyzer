@@ -146,6 +146,7 @@ def main():
     aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
     while history:
         for entry in history:
+            op = entry['operation_history']['op_object']
             op_id = entry['account_history']['operation_id']
             op_date = entry['block_data']['block_time']
             log.debug('Processing op {} @ {}'.format(op_date, op_id))
@@ -170,9 +171,9 @@ def main():
             elif aggregated_line['order_id'] == op['order_id']:
                 # If selling same asset at the same rate, just aggregate the trades
                 aggregated_line['date'] = line_dict['date']
-                aggregated_line['sell_amount'] += sell_amount
-                aggregated_line['buy_amount'] += buy_amount
-                aggregated_line['fee_amount'] += fee_amount
+                aggregated_line['sell_amount'] += line_dict['sell_amount']
+                aggregated_line['buy_amount'] += line_dict['buy_amount']
+                aggregated_line['fee_amount'] += line_dict['fee_amount']
                 aggregated_line['comment'] += ' {}'.format(op_id)
                 # Prevent division by zero
                 price = Decimal('0')
