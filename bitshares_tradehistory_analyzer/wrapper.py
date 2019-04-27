@@ -38,3 +38,14 @@ class Wrapper:
         params = {}
         params['operation_type'] = 4
         return self._query(params, *args, **kwargs)
+
+    def is_alive(self):
+        """ Check built-it ES wrapper metric to check whether it's alive
+        """
+        url = self.url + 'is_alive'
+        r = requests.get(url)
+
+        if r.status_code == requests.codes.ok:
+            return r.json().get('status') == 'ok'
+
+        return False
