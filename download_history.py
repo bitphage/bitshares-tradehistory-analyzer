@@ -84,6 +84,112 @@ class Wrapper:
         return self._query(params, *args, **kwargs)
 
 
+class Parser():
+    """ Entries parser
+
+        :param BitShares bitshares_instance:
+        :param Account account:
+    """
+
+    def __init__(self, bitshares_instance, account):
+        self.bitshares = bitshares_instance
+        self.account = Account(account, bitshares_instance=self.bitshares)
+
+
+    def parse_transfer_entry(self, entry):
+        """ Parse single transfer entry into a dict object suitable for writing line
+
+            :param dict entry: elastic wrapper entry
+            :return: dict object suitable for writing line
+        """
+
+        op_id = entry['account_history']['operation_id']
+        op_date = entry['block_data']['block_time']
+        op = entry['operation_history']['op_object']
+
+        data = copy.deepcopy(LINE_DICT_TEMPLATE)
+
+        amount = Amount(op['amount_'], bitshares_instance=self.bitshares)
+        from_account = Account(op['from'], bitshares_instance=self.bitshares)
+        to_account = Account(op['to'], bitshares_instance=self.bitshares)
+        fee = Amount(op['fee'], bitshares_instance=self.bitshares)
+        log.info(
+            'Transfer: {} -> {}, {}'.format(
+                from_account.name, to_account.name, amount
+            )
+        )
+
+        if from_account.name == self.account.name:
+            data['kind'] = 'Withdrawal'
+            data['sell_cur'] = amount.symbol
+            data['sell_amount'] = amount.amount
+            data['fee_cur'] = fee.symbol
+            data['fee_amount'] = fee.amount
+        else:
+            data['kind'] = 'Deposit'
+            data['buy_cur'] = amount.symbol
+            data['buy_amount'] = amount.amount
+
+        data['comment'] = op_id
+        data['date'] = op_date
+
+        return data
+
+    def parse_trade_entry(self, entry):
+        """ Parse single trade entry (fill order) into a dict object suitable for writing line
+
+            :param dict entry: elastic wrapper entry
+            :return: dict object suitable for writing line
+        """
+
+        op_id = entry['account_history']['operation_id']
+        op_date = entry['block_data']['block_time']
+        op = entry['operation_history']['op_object']
+
+        data = copy.deepcopy(LINE_DICT_TEMPLATE)
+
+        op = entry['operation_history']['op_object']
+
+        sell_asset = Asset(op['pays']['asset_id'], bitshares_instance=self.bitshares)
+        sell_amount = Decimal(op['pays']['amount']).scaleb(-sell_asset['precision'])
+        buy_asset = Asset(op['receives']['asset_id'], bitshares_instance=self.bitshares)
+        buy_amount = Decimal(op['receives']['amount']).scaleb(
+            -buy_asset['precision']
+        )
+        fee_asset = Asset(op['fee']['asset_id'], bitshares_instance=self.bitshares)
+        fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
+
+        # Subtract fee from buy_amount
+        # For ccgains, any fees for the transaction should already have been substracted from *amount*, but included
+        # in *cost*.
+        if fee_asset.symbol == buy_asset.symbol:
+            buy_amount -= fee_amount
+
+        data['kind'] = 'Trade'
+        data['sell_cur'] = sell_asset.symbol
+        data['sell_amount'] = sell_amount
+        data['buy_cur'] = buy_asset.symbol
+        data['buy_amount'] = buy_amount
+        data['fee_cur'] = fee_asset.symbol
+        data['fee_amount'] = fee_amount
+        data['comment'] = op_id
+        data['order_id'] = op['order_id']
+        data['prec'] = max(sell_asset['precision'], buy_asset['precision'])
+
+        # Prevent division by zero
+        price = Decimal('0')
+        price_inverted = Decimal('0')
+        if sell_amount and buy_amount:
+            price = buy_amount / sell_amount
+            price_inverted = sell_amount / buy_amount
+
+        data['price'] = price
+        data['price_inverted'] = price_inverted
+        data['date'] = entry['block_data']['block_time']
+
+        return data
+
+
 def get_continuation_point(filename):
     """ Check csv-file for number of records and last op id
 
@@ -113,6 +219,7 @@ def get_continuation_point(filename):
         log.info('Continuing {} from {}, op id: {}'.format(filename, dtime, last_op_id))
 
     return dtime, last_op_id
+
 
 
 def main():
@@ -157,7 +264,7 @@ def main():
         conf = yaml.load(ymlfile)
 
     bitshares = BitShares(node=conf['nodes'])
-    account = Account(args.account, bitshares_instance=bitshares)
+    parser = Parser(bitshares, args.account)
 
     if args.url:
         wrapper_url = args.url
@@ -192,38 +299,9 @@ def main():
                 log.debug('skipping entry {}'.format(entry))
                 continue
 
-            line_dict = copy.deepcopy(LINE_DICT_TEMPLATE)
-            line_dict['date'] = op_date
-            op = entry['operation_history']['op_object']
+            parsed_data = parser.parse_transfer_entry(entry)
+            f.write(LINE_TEMPLATE.format(**parsed_data))
 
-            amount = Amount(op['amount_'], bitshares_instance=bitshares)
-            from_account = Account(op['from'], bitshares_instance=bitshares)
-            to_account = Account(op['to'], bitshares_instance=bitshares)
-            fee = Amount(op['fee'], bitshares_instance=bitshares)
-            log.info(
-                'Transfer: {} -> {}, {}'.format(
-                    from_account.name, to_account.name, amount
-                )
-            )
-
-            if from_account.name == account.name:
-                line_dict['kind'] = 'Withdrawal'
-                line_dict['sell_cur'] = amount.symbol
-                line_dict['sell_amount'] = amount.amount
-                line_dict['fee_cur'] = fee.symbol
-                line_dict['fee_amount'] = fee.amount
-            else:
-                line_dict['kind'] = 'Deposit'
-                line_dict['buy_cur'] = amount.symbol
-                line_dict['buy_amount'] = amount.amount
-
-            line_dict['comment'] = op_id
-
-            line = (
-                '{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
-                '{mark},{comment}\n'.format(**line_dict)
-            )
-            f.write(line)
         # Remember last op id for the next chunk
         last_op_id = op_id
 
@@ -261,45 +339,7 @@ def main():
                 last_op_id = None
                 continue
 
-            line_dict = copy.deepcopy(LINE_DICT_TEMPLATE)
-            line_dict['date'] = entry['block_data']['block_time']
-            op = entry['operation_history']['op_object']
-
-            sell_asset = Asset(op['pays']['asset_id'], bitshares_instance=bitshares)
-            sell_amount = Decimal(op['pays']['amount']).scaleb(-sell_asset['precision'])
-            buy_asset = Asset(op['receives']['asset_id'], bitshares_instance=bitshares)
-            buy_amount = Decimal(op['receives']['amount']).scaleb(
-                -buy_asset['precision']
-            )
-            fee_asset = Asset(op['fee']['asset_id'], bitshares_instance=bitshares)
-            fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
-
-            # Subtract fee from buy_amount
-            # For ccgains, any fees for the transaction should already have been substracted from *amount*, but included
-            # in *cost*.
-            if fee_asset.symbol == buy_asset.symbol:
-                buy_amount -= fee_amount
-
-            line_dict['kind'] = 'Trade'
-            line_dict['sell_cur'] = sell_asset.symbol
-            line_dict['sell_amount'] = sell_amount
-            line_dict['buy_cur'] = buy_asset.symbol
-            line_dict['buy_amount'] = buy_amount
-            line_dict['fee_cur'] = fee_asset.symbol
-            line_dict['fee_amount'] = fee_amount
-            line_dict['comment'] = op_id
-            line_dict['order_id'] = op['order_id']
-            line_dict['prec'] = max(sell_asset['precision'], buy_asset['precision'])
-
-            # Prevent division by zero
-            price = Decimal('0')
-            price_inverted = Decimal('0')
-            if sell_amount and buy_amount:
-                price = buy_amount / sell_amount
-                price_inverted = sell_amount / buy_amount
-
-            line_dict['price'] = price
-            line_dict['price_inverted'] = price_inverted
+            line_dict = parser.parse_trade_entry(entry)
 
             if args.no_aggregate:
                 log.info(SELL_LOG_TEMPLATE.format(**line_dict))
