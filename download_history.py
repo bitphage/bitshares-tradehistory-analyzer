@@ -22,7 +22,6 @@ SELL_LOG_TEMPLATE = (
 )
 
 
-
 def get_continuation_point(filename):
     """ Check csv-file for number of records and last op id
 
@@ -54,30 +53,16 @@ def get_continuation_point(filename):
     return dtime, last_op_id
 
 
-
 def main():
 
     parser = argparse.ArgumentParser(
         description='Export bitshares transfer and trading history for an account',
         epilog='Report bugs to: https://github.com/bitfag/bitshares-tradehistory-analyzer/issues',
     )
-    parser.add_argument(
-        '-d', '--debug', action='store_true', help='enable debug output'
-    ),
-    parser.add_argument(
-        '-c',
-        '--config',
-        default='./config.yml',
-        help='specify custom path for config file',
-    )
-    parser.add_argument(
-        '-u', '--url', help='override URL of elasticsearch wrapper plugin'
-    )
-    parser.add_argument(
-        '--no-aggregate',
-        action='store_true',
-        help='do not aggregate trades by same order',
-    )
+    parser.add_argument('-d', '--debug', action='store_true', help='enable debug output'),
+    parser.add_argument('-c', '--config', default='./config.yml', help='specify custom path for config file')
+    parser.add_argument('-u', '--url', help='override URL of elasticsearch wrapper plugin')
+    parser.add_argument('--no-aggregate', action='store_true', help='do not aggregate trades by same order')
     parser.add_argument('account')
     args = parser.parse_args()
 
@@ -193,12 +178,8 @@ def main():
                 price = Decimal('0')
                 price_inverted = Decimal('0')
                 if aggregated_line['sell_amount'] and aggregated_line['buy_amount']:
-                    price = (
-                        aggregated_line['buy_amount'] / aggregated_line['sell_amount']
-                    )
-                    price_inverted = (
-                        aggregated_line['sell_amount'] / aggregated_line['buy_amount']
-                    )
+                    price = aggregated_line['buy_amount'] / aggregated_line['sell_amount']
+                    price_inverted = aggregated_line['sell_amount'] / aggregated_line['buy_amount']
                 aggregated_line['price'] = price
                 aggregated_line['price_inverted'] = price_inverted
             else:
