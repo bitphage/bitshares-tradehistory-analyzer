@@ -1,193 +1,26 @@
 #!/usr/bin/env python
 
 import os.path
-import sys
 import argparse
 import logging
-import requests
 import random
 import copy
 
 from ruamel.yaml import YAML
-from decimal import Decimal
 from bitshares import BitShares
-from bitshares.account import Account
-from bitshares.amount import Amount
-from bitshares.asset import Asset
+from decimal import Decimal
 
-log = logging.getLogger(__name__)
+from bitshares_tradehistory_analyzer.wrapper import Wrapper
+from bitshares_tradehistory_analyzer.parser import Parser
+from bitshares_tradehistory_analyzer.consts import LINE_TEMPLATE, LINE_DICT_TEMPLATE, HEADER
 
-LINE_DICT_TEMPLATE = {
-    'kind': '',
-    'buy_cur': '',
-    'buy_amount': 0,
-    'sell_cur': '',
-    'sell_amount': 0,
-    'fee_cur': '',
-    'fee_amount': 0,
-    'exchange': 'Bitshares',
-    'mark': -1,
-    'comment': '',
-    'order_id': '',
-}
-
-# CSV format is ccGains generic format
-HEADER = 'Kind,Date,Buy currency,Buy amount,Sell currency,Sell amount,Fee currency,Fee amount,Exchange,Mark,Comment\n'
-
-LINE_TEMPLATE = (
-    '{kind},{date},{buy_cur},{buy_amount},{sell_cur},{sell_amount},{fee_cur},{fee_amount},{exchange},'
-    '{mark},{comment}\n'
-)
+log = logging.getLogger('bitshares_tradehistory_analyzer')
 
 SELL_LOG_TEMPLATE = (
     'Sold {sell_amount} {sell_cur} for {buy_amount} {buy_cur} @ {price:.{prec}} {buy_cur}/{sell_cur}'
     ' ({price_inverted:.{prec}f} {sell_cur}/{buy_cur})'
 )
 
-
-class Wrapper:
-    """ Wrapper for querying bitshares elasticsearch wrapper
-    """
-
-    def __init__(self, url, account_id):
-        self.url = url
-        self.account_id = account_id
-        self.size = 200
-
-    def _query(self, params, *args, **kwargs):
-        url = self.url + 'get_account_history'
-        payload = {
-            'account_id': self.account_id,
-            'size': self.size,
-            'operation_type': 0,
-            'sort_by': 'account_history.sequence',
-            'type': 'data',
-            'agg_field': 'operation_type',
-        }
-        payload.update(params)
-
-        if kwargs:
-            payload.update(kwargs)
-
-        r = requests.get(url, params=payload)
-        r.raise_for_status()
-        return r.json()
-
-    def get_transfers(self, *args, **kwargs):
-        params = {}
-        params['operation_type'] = 0
-        return self._query(params, *args, **kwargs)
-
-    def get_trades(self, *args, **kwargs):
-        params = {}
-        params['operation_type'] = 4
-        return self._query(params, *args, **kwargs)
-
-
-class Parser():
-    """ Entries parser
-
-        :param BitShares bitshares_instance:
-        :param Account account:
-    """
-
-    def __init__(self, bitshares_instance, account):
-        self.bitshares = bitshares_instance
-        self.account = Account(account, bitshares_instance=self.bitshares)
-
-
-    def parse_transfer_entry(self, entry):
-        """ Parse single transfer entry into a dict object suitable for writing line
-
-            :param dict entry: elastic wrapper entry
-            :return: dict object suitable for writing line
-        """
-
-        op_id = entry['account_history']['operation_id']
-        op_date = entry['block_data']['block_time']
-        op = entry['operation_history']['op_object']
-
-        data = copy.deepcopy(LINE_DICT_TEMPLATE)
-
-        amount = Amount(op['amount_'], bitshares_instance=self.bitshares)
-        from_account = Account(op['from'], bitshares_instance=self.bitshares)
-        to_account = Account(op['to'], bitshares_instance=self.bitshares)
-        fee = Amount(op['fee'], bitshares_instance=self.bitshares)
-        log.info(
-            'Transfer: {} -> {}, {}'.format(
-                from_account.name, to_account.name, amount
-            )
-        )
-
-        if from_account.name == self.account.name:
-            data['kind'] = 'Withdrawal'
-            data['sell_cur'] = amount.symbol
-            data['sell_amount'] = amount.amount
-            data['fee_cur'] = fee.symbol
-            data['fee_amount'] = fee.amount
-        else:
-            data['kind'] = 'Deposit'
-            data['buy_cur'] = amount.symbol
-            data['buy_amount'] = amount.amount
-
-        data['comment'] = op_id
-        data['date'] = op_date
-
-        return data
-
-    def parse_trade_entry(self, entry):
-        """ Parse single trade entry (fill order) into a dict object suitable for writing line
-
-            :param dict entry: elastic wrapper entry
-            :return: dict object suitable for writing line
-        """
-
-        op_id = entry['account_history']['operation_id']
-        op_date = entry['block_data']['block_time']
-        op = entry['operation_history']['op_object']
-
-        data = copy.deepcopy(LINE_DICT_TEMPLATE)
-
-        op = entry['operation_history']['op_object']
-
-        sell_asset = Asset(op['pays']['asset_id'], bitshares_instance=self.bitshares)
-        sell_amount = Decimal(op['pays']['amount']).scaleb(-sell_asset['precision'])
-        buy_asset = Asset(op['receives']['asset_id'], bitshares_instance=self.bitshares)
-        buy_amount = Decimal(op['receives']['amount']).scaleb(
-            -buy_asset['precision']
-        )
-        fee_asset = Asset(op['fee']['asset_id'], bitshares_instance=self.bitshares)
-        fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
-
-        # Subtract fee from buy_amount
-        # For ccgains, any fees for the transaction should already have been substracted from *amount*, but included
-        # in *cost*.
-        if fee_asset.symbol == buy_asset.symbol:
-            buy_amount -= fee_amount
-
-        data['kind'] = 'Trade'
-        data['sell_cur'] = sell_asset.symbol
-        data['sell_amount'] = sell_amount
-        data['buy_cur'] = buy_asset.symbol
-        data['buy_amount'] = buy_amount
-        data['fee_cur'] = fee_asset.symbol
-        data['fee_amount'] = fee_amount
-        data['comment'] = op_id
-        data['order_id'] = op['order_id']
-        data['prec'] = max(sell_asset['precision'], buy_asset['precision'])
-
-        # Prevent division by zero
-        price = Decimal('0')
-        price_inverted = Decimal('0')
-        if sell_amount and buy_amount:
-            price = buy_amount / sell_amount
-            price_inverted = sell_amount / buy_amount
-
-        data['price'] = price
-        data['price_inverted'] = price_inverted
-        data['date'] = entry['block_data']['block_time']
-
-        return data
 
 
 def get_continuation_point(filename):
@@ -271,12 +104,12 @@ def main():
     else:
         wrapper_url = random.choice(conf['wrappers'])
     log.info('Using wrapper {}'.format(wrapper_url))
-    wrapper = Wrapper(wrapper_url, account['id'])
+    wrapper = Wrapper(wrapper_url, parser.account['id'])
 
     ##################
     # Export transfers
     ##################
-    filename = 'transfers-{}.csv'.format(account.name)
+    filename = 'transfers-{}.csv'.format(args.account)
     dtime, last_op_id = get_continuation_point(filename)
     if not (dtime and last_op_id):
         f = open(filename, 'w')
@@ -316,7 +149,7 @@ def main():
     ########################
     # Export trading history
     ########################
-    filename = 'trades-{}.csv'.format(account.name)
+    filename = 'trades-{}.csv'.format(args.account)
     dtime, last_op_id = get_continuation_point(filename)
     if not (dtime and last_op_id):
         f = open(filename, 'w')

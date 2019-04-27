@@ -1,7 +1,7 @@
 import pytest
 import json
 
-from download_history import Parser
+from bitshares_tradehistory_analyzer.parser import Parser
 
 @pytest.fixture(scope='module')
 def account_name():
