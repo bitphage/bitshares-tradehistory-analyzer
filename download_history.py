@@ -67,7 +67,7 @@ def main():
     args = parser.parse_args()
 
     # create logger
-    if args.debug == True:
+    if args.debug:
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
