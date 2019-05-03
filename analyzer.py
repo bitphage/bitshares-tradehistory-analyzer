@@ -25,9 +25,7 @@ fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler(stream=sys.stdout)
 ch.setLevel(logging.DEBUG)
 # Create formatters and add them to the handlers
-fhformatter = logging.Formatter(
-    '%(asctime)s %(levelname)-8s - %(module)13s -> %(funcName)-13s: ' '%(message)s'
-)
+fhformatter = logging.Formatter('%(asctime)s %(levelname)-8s - %(module)13s -> %(funcName)-13s: ' '%(message)s')
 chformatter = logging.Formatter('%(levelname)-8s: %(message)s')
 # fh.setFormatter(fhformatter)
 fh.setFormatter(chformatter)
@@ -46,27 +44,13 @@ def main():
         description='Analyze bitshares trading history using FIFO/LIFO/LPFO accounting methods',
         epilog='Report bugs to: https://github.com/bitfag/bitshares-tradehistory-analyzer/issues',
     )
+    parser.add_argument('-d', '--debug', action='store_true', help='enable debug output'),
+    parser.add_argument('-c', '--config', default='./config.yml', help='specify custom path for config file')
+    parser.add_argument('-m', '--mode', default='LPFO', help='inventory accounting mode')
+    parser.add_argument('-p', '--precision', type=int, help='custom precision for BASE currency columns')
+    parser.add_argument('-y', '--year', default=None, type=int, help='Generate report for specified year only')
     parser.add_argument(
-        '-d', '--debug', action='store_true', help='enable debug output'
-    ),
-    parser.add_argument(
-        '-c',
-        '--config',
-        default='./config.yml',
-        help='specify custom path for config file',
-    )
-    parser.add_argument(
-        '-m', '--mode', default='LPFO', help='inventory accounting mode'
-    )
-    parser.add_argument(
-        '-p', '--precision', type=int, help='custom precision for BASE currency columns'
-    )
-    parser.add_argument(
-        '-y',
-        '--year',
-        default=None,
-        type=int,
-        help='Generate report for specified year only',
+        '--short-only', action='store_true', default=False, help='generate only short report (skip detailed report)'
     )
     parser.add_argument('base_currency', help='BASE currency like USD/CNY/RUDEX.BTC')
     parser.add_argument('account', help='bitshares account name')
@@ -77,9 +61,7 @@ def main():
     th.append_csv('transfers-{}.csv'.format(args.account))
     th.append_csv('trades-{}.csv'.format(args.account))
 
-    status_filename = 'status-{}-{}-{}.json'.format(
-        args.account, args.mode, args.base_currency
-    )
+    status_filename = 'status-{}-{}-{}.json'.format(args.account, args.mode, args.base_currency)
     if os.path.isfile(status_filename):
         bf.load(status_filename)
 
@@ -131,11 +113,7 @@ def main():
     formatters = {}
     if args.precision:
         btc_formatter = lambda x: '{:.{prec}f}'.format(x, prec=args.precision)
-        formatters = {
-            'Purchase cost': btc_formatter,
-            'Proceeds': btc_formatter,
-            'Profit': btc_formatter,
-        }
+        formatters = {'Purchase cost': btc_formatter, 'Proceeds': btc_formatter, 'Profit': btc_formatter}
 
     bf.report.export_report_to_pdf(
         'Report-{}-{}-{}.pdf'.format(args.account, args.mode, args.year),
@@ -147,14 +125,15 @@ def main():
         locale="en_US",
     )
 
-    bf.report.export_extended_report_to_pdf(
-        'Details-{}-{}-{}.pdf'.format(args.account, args.mode, args.year),
-        date_precision='S',
-        combine=False,
-        font_size=10,
-        year=args.year,
-        locale="en_US",
-    )
+    if not args.short_only:
+        bf.report.export_extended_report_to_pdf(
+            'Details-{}-{}-{}.pdf'.format(args.account, args.mode, args.year),
+            date_precision='S',
+            combine=False,
+            font_size=10,
+            year=args.year,
+            locale="en_US",
+        )
 
 
 # run the main() function above:
