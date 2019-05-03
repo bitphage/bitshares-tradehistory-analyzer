@@ -5,7 +5,6 @@ import time
 import sys
 import os.path
 import argparse
-import ccgains
 
 from lib.helper import TradeHistory, BagQueue
 
