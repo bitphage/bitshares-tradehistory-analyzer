@@ -87,3 +87,9 @@ Features:
   currencies, so precision is 2 (numbers in 0.00 format). If you need to analyze BTC:XXX markets, use `--precision 8`
 - `--year` option let you limit reporting year. This is obvious, no need to generate full report each time while you
   already have a reports for previous years.
+
+
+Support
+=======
+
+If you have any issues, please open a github issue (and maybe search for similar open/closed issues).
