@@ -12,6 +12,7 @@ class Wrapper:
         self.account_id = account_id
         self.size = 200
 
+    @staticmethod
     def _request(url, payload):
         r = requests.get(url, params=payload)
         r.raise_for_status()
