@@ -5,6 +5,7 @@ import argparse
 import logging
 import random
 import copy
+import time
 
 from ruamel.yaml import YAML
 from bitshares import BitShares
@@ -199,6 +200,7 @@ def main():
             break
 
         # Get next data chunk
+        time.sleep(1)
         history = wrapper.get_trades(from_date=op_date)
 
     # At the end, write remaining line
