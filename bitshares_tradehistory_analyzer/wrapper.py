@@ -1,5 +1,7 @@
 import requests
 
+from json.decoder import JSONDecodeError
+
 
 class Wrapper:
     """ Wrapper for querying bitshares elasticsearch wrapper
@@ -9,6 +11,16 @@ class Wrapper:
         self.url = url
         self.account_id = account_id
         self.size = 200
+
+    def _request(url, payload):
+        r = requests.get(url, params=payload)
+        r.raise_for_status()
+        try:
+            result = r.json()
+        except JSONDecodeError:
+            print(str(r))
+            raise
+        return result
 
     def _query(self, params, *args, **kwargs):
         url = self.url + 'get_account_history'
@@ -25,9 +37,7 @@ class Wrapper:
         if kwargs:
             payload.update(kwargs)
 
-        r = requests.get(url, params=payload)
-        r.raise_for_status()
-        return r.json()
+        return self._request(url, payload)
 
     def get_transfers(self, *args, **kwargs):
         params = {}
