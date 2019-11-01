@@ -54,7 +54,10 @@ class Wrapper:
         """ Check built-it ES wrapper metric to check whether it's alive
         """
         url = self.url + 'is_alive'
-        r = requests.get(url)
+        try:
+            r = requests.get(url)
+        except requests.exceptions.ConnectionError:
+            return False
 
         if r.status_code == requests.codes.ok:
             return r.json().get('status') == 'ok'
