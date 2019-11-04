@@ -150,6 +150,11 @@ def main():
             op = entry['operation_history']['op_object']
             op_id = entry['account_history']['operation_id']
             op_date = entry['block_data']['block_time']
+
+            if op is None:
+                log.error('None op_object in {}, resulting file will be inconsistent!'.format(op_id))
+                continue
+
             log.debug('Processing op {} @ {}'.format(op_date, op_id))
             # Skip entries until last_op_id found
             if last_op_id and op_id != last_op_id:
