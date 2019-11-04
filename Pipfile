@@ -8,6 +8,7 @@ requests = "*"
 bitshares = "*"
 ruamel-yaml = "*"
 ccgains = {git = "https://github.com/probstj/ccGains.git"}
+pandas = "==0.24.2"
 
 [dev-packages]
 
