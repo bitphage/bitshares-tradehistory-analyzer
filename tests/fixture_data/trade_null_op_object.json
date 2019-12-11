@@ -1,0 +1,24 @@
+{
+  "account_history": {
+    "account": "1.2.1525925",
+    "id": "2.9.1030363328",
+    "next": "2.9.1028498258",
+    "operation_id": "1.11.1005897922",
+    "sequence": 3310
+  },
+  "block_data": {
+    "block_num": 42359579,
+    "block_time": "2019-11-02T08:16:42",
+    "trx_id": "e240af8bf30c5b00eb34ff6bdf4ead3528e0650b"
+  },
+  "operation_history": {
+    "op": "[4,{\"fee\":{\"amount\":0,\"asset_id\":\"1.3.1325\"},\"order_id\":\"1.7.417432224\",\"account_id\":\"1.2.1525925\",\"pays\":{\"amount\":151295,\"asset_id\":\"1.3.1621\"},\"receives\":{\"amount\":1880128,\"asset_id\":\"1.3.1325\"},\"fill_price\":{\"base\":{\"amount\":1786346,\"asset_id\":\"1.3.1621\"},\"quote\":{\"amount\":22198745,\"asset_id\":\"1.3.1325\"}},\"is_maker\":true}]",
+    "op_in_trx": 1,
+    "op_object": null,
+    "operation_result": "[0,{}]",
+    "trx_in_block": 17,
+    "virtual_op": 3
+  },
+  "operation_id_num": 1005897922,
+  "operation_type": 4
+}

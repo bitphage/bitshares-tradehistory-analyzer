@@ -147,13 +147,9 @@ def main():
     aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
     while history:
         for entry in history:
-            op = entry['operation_history']['op_object']
+            op = parser.load_op(entry)
             op_id = entry['account_history']['operation_id']
             op_date = entry['block_data']['block_time']
-
-            if op is None:
-                log.error('None op_object in {}, resulting file will be inconsistent!'.format(op_id))
-                continue
 
             log.debug('Processing op {} @ {}'.format(op_date, op_id))
             # Skip entries until last_op_id found

@@ -1,5 +1,6 @@
 import copy
 import logging
+import json
 
 from decimal import Decimal
 
@@ -23,6 +24,20 @@ class Parser:
         self.bitshares = bitshares_instance
         self.account = Account(account, bitshares_instance=self.bitshares)
 
+    def load_op(self, entry):
+        """ Try to load operation from account history entry
+
+            :param dict entry:
+        """
+        try:
+            op = json.loads(entry['operation_history']['op'])[1]
+        except json.decoder.JSONDecodeError:
+            try:
+                op = entry['operation_history']['op_object']
+            except TypeError:
+                raise ValueError('Could not find op data in op %s', entry['account_history']['operation_id'])
+        return op
+
     def parse_transfer_entry(self, entry):
         """ Parse single transfer entry into a dict object suitable for writing line
 
@@ -32,11 +47,12 @@ class Parser:
 
         op_id = entry['account_history']['operation_id']
         op_date = entry['block_data']['block_time']
-        op = entry['operation_history']['op_object']
+        op = self.load_op(entry)
 
         data = copy.deepcopy(LINE_DICT_TEMPLATE)
 
-        amount = Amount(op['amount_'], bitshares_instance=self.bitshares)
+        raw_amount = op['amount'] if 'amount' in op else op['amount_']
+        amount = Amount(raw_amount, bitshares_instance=self.bitshares)
         from_account = Account(op['from'], bitshares_instance=self.bitshares)
         to_account = Account(op['to'], bitshares_instance=self.bitshares)
         fee = Amount(op['fee'], bitshares_instance=self.bitshares)
@@ -66,12 +82,9 @@ class Parser:
         """
 
         op_id = entry['account_history']['operation_id']
-        op_date = entry['block_data']['block_time']
-        op = entry['operation_history']['op_object']
+        op = self.load_op(entry)
 
         data = copy.deepcopy(LINE_DICT_TEMPLATE)
-
-        op = entry['operation_history']['op_object']
 
         sell_asset = Asset(op['pays']['asset_id'], bitshares_instance=self.bitshares)
         sell_amount = Decimal(op['pays']['amount']).scaleb(-sell_asset['precision'])
