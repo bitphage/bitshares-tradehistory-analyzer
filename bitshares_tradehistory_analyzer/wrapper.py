@@ -77,6 +77,10 @@ class Wrapper:
             return False
 
         if r.status_code == requests.codes.ok:
-            return r.json().get('status') == 'ok'
+            try:
+                return r.json().get('status') == 'ok'
+            except JSONDecodeError:
+                print(str(r))
+                return False
 
         return False
