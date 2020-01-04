@@ -1,4 +1,5 @@
 import requests
+import urllib.parse
 
 from json.decoder import JSONDecodeError
 
@@ -11,10 +12,14 @@ class Wrapper:
         self.url = url
         self.account_id = account_id
         self.size = 200
+        self.version = 1
+
+        self.detect_version()
 
     @staticmethod
     def _request(url, payload):
         r = requests.get(url, params=payload)
+        # Throw an exception if response was not 200
         r.raise_for_status()
         try:
             result = r.json()
@@ -23,8 +28,20 @@ class Wrapper:
             raise
         return result
 
+    def detect_version(self):
+        params = {'size': 1, 'account_id': '1.2.22'}
+        try:
+            self._query(params)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                self.version = 2
+
     def _query(self, params, *args, **kwargs):
-        url = self.url + 'get_account_history'
+        if self.version == 1:
+            url = urllib.parse.urljoin(self.url, 'get_account_history')
+        elif self.version == 2:
+            url = urllib.parse.urljoin(self.url, 'account_history')
+
         payload = {
             'account_id': self.account_id,
             'size': self.size,
@@ -53,7 +70,7 @@ class Wrapper:
     def is_alive(self):
         """ Check built-it ES wrapper metric to check whether it's alive
         """
-        url = self.url + 'is_alive'
+        url = urllib.parse.urljoin(self.url, 'is_alive')
         try:
             r = requests.get(url)
         except requests.exceptions.ConnectionError:
