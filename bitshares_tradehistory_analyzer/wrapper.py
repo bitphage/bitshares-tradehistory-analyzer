@@ -67,12 +67,13 @@ class Wrapper:
         params['operation_type'] = 4
         return self._query(params, *args, **kwargs)
 
-    def is_alive(self):
+    @staticmethod
+    def is_alive(url):
         """ Check built-it ES wrapper metric to check whether it's alive
         """
-        url = urllib.parse.urljoin(self.url, 'is_alive')
+        url = urllib.parse.urljoin(url, 'is_alive')
         try:
-            r = requests.get(url)
+            r = requests.get(url, timeout=5)
         except requests.exceptions.ConnectionError:
             return False
 
