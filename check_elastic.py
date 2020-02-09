@@ -34,8 +34,7 @@ def main():
         conf = yaml.load(ymlfile)
 
     for url in conf.get('wrappers', []):
-        wrapper = Wrapper(url, None)
-        alive = wrapper.is_alive()
+        alive = Wrapper.is_alive(url)
         print('Wrapper {} is {}'.format(url, 'alive' if alive else 'not alive'))
 
 
