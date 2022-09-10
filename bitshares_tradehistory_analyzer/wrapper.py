@@ -1,12 +1,11 @@
-import requests
 import urllib.parse
-
 from json.decoder import JSONDecodeError
+
+import requests
 
 
 class Wrapper:
-    """ Wrapper for querying bitshares elasticsearch wrapper
-    """
+    """Wrapper for querying bitshares elasticsearch wrapper"""
 
     def __init__(self, url, account_id):
         self.url = url
@@ -18,15 +17,33 @@ class Wrapper:
 
     @staticmethod
     def _request(url, payload):
-        r = requests.get(url, params=payload)
+        response = requests.get(url, params=payload)
         # Throw an exception if response was not 200
-        r.raise_for_status()
+        response.raise_for_status()
         try:
-            result = r.json()
+            result = response.json()
         except JSONDecodeError:
-            print(str(r))
+            print(str(response))
             raise
         return result
+
+    @staticmethod
+    def is_alive(url):
+        """Check built-it ES wrapper metric to check whether it's alive"""
+        url = urllib.parse.urljoin(url, 'is_alive')
+        try:
+            response = requests.get(url, timeout=5)
+        except requests.exceptions.ConnectionError:
+            return False
+
+        if response.status_code == requests.codes.ok:
+            try:
+                return response.json().get('status') == 'ok'
+            except JSONDecodeError:
+                print(str(response))
+                return False
+
+        return False
 
     def detect_version(self):
         params = {'size': 1, 'account_id': '1.2.22'}
@@ -35,6 +52,16 @@ class Wrapper:
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
                 self.version = 2
+
+    def get_transfers(self, *args, **kwargs):
+        params = {}
+        params['operation_type'] = 0
+        return self._query(params, *args, **kwargs)
+
+    def get_trades(self, *args, **kwargs):
+        params = {}
+        params['operation_type'] = 4
+        return self._query(params, *args, **kwargs)
 
     def _query(self, params, *args, **kwargs):
         if self.version == 1:
@@ -56,32 +83,3 @@ class Wrapper:
             payload.update(kwargs)
 
         return self._request(url, payload)
-
-    def get_transfers(self, *args, **kwargs):
-        params = {}
-        params['operation_type'] = 0
-        return self._query(params, *args, **kwargs)
-
-    def get_trades(self, *args, **kwargs):
-        params = {}
-        params['operation_type'] = 4
-        return self._query(params, *args, **kwargs)
-
-    @staticmethod
-    def is_alive(url):
-        """ Check built-it ES wrapper metric to check whether it's alive
-        """
-        url = urllib.parse.urljoin(url, 'is_alive')
-        try:
-            r = requests.get(url, timeout=5)
-        except requests.exceptions.ConnectionError:
-            return False
-
-        if r.status_code == requests.codes.ok:
-            try:
-                return r.json().get('status') == 'ok'
-            except JSONDecodeError:
-                print(str(r))
-                return False
-
-        return False

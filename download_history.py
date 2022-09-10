@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 
-import os.path
 import argparse
-import logging
-import random
 import copy
+import logging
+import os.path
+import random
 import time
-
-from ruamel.yaml import YAML
-from bitshares import BitShares
 from decimal import Decimal
 
-from bitshares_tradehistory_analyzer.wrapper import Wrapper
+from bitshares import BitShares
+from ruamel.yaml import YAML
+
+from bitshares_tradehistory_analyzer.consts import HEADER, LINE_DICT_TEMPLATE, LINE_TEMPLATE
 from bitshares_tradehistory_analyzer.parser import Parser
-from bitshares_tradehistory_analyzer.consts import LINE_TEMPLATE, LINE_DICT_TEMPLATE, HEADER
+from bitshares_tradehistory_analyzer.wrapper import Wrapper
 
 log = logging.getLogger('bitshares_tradehistory_analyzer')
 
@@ -24,10 +24,10 @@ SELL_LOG_TEMPLATE = (
 
 
 def get_continuation_point(filename):
-    """ Check csv-file for number of records and last op id
+    """Check csv-file for number of records and last op id
 
-        :param str filename: path to the file to check
-        :return: str, str: datetime string of last record and last op id
+    :param str filename: path to the file to check
+    :return: str, str: datetime string of last record and last op id
     """
     dtime = '2010-10-10'
     last_op_id = None
@@ -88,7 +88,7 @@ def main():
     if args.url:
         wrapper_url = args.url
     else:
-        wrapper_url = random.choice(conf['wrappers'])
+        wrapper_url = random.choice(conf['wrappers'])  # noqa: DUO102
     log.info('Using wrapper {}'.format(wrapper_url))
     wrapper = Wrapper(wrapper_url, parser.account['id'])
 
@@ -98,10 +98,10 @@ def main():
     filename = 'transfers-{}.csv'.format(args.account)
     dtime, last_op_id = get_continuation_point(filename)
     if not (dtime and last_op_id):
-        f = open(filename, 'w')
-        f.write(HEADER)
+        fd = open(filename, 'w')
+        fd.write(HEADER)
     else:
-        f = open(filename, 'a')
+        fd = open(filename, 'a')
 
     history = wrapper.get_transfers(from_date=dtime)
     while history:
@@ -119,7 +119,7 @@ def main():
                 continue
 
             parsed_data = parser.parse_transfer_entry(entry)
-            f.write(LINE_TEMPLATE.format(**parsed_data))
+            fd.write(LINE_TEMPLATE.format(**parsed_data))
 
         # Remember last op id for the next chunk
         last_op_id = op_id
@@ -130,7 +130,7 @@ def main():
 
         # Get next data chunk
         history = wrapper.get_transfers(from_date=op_date)
-    f.close()
+    fd.close()
 
     ########################
     # Export trading history
@@ -138,10 +138,10 @@ def main():
     filename = 'trades-{}.csv'.format(args.account)
     dtime, last_op_id = get_continuation_point(filename)
     if not (dtime and last_op_id):
-        f = open(filename, 'w')
-        f.write(HEADER)
+        fd = open(filename, 'w')
+        fd.write(HEADER)
     else:
-        f = open(filename, 'a')
+        fd = open(filename, 'a')
 
     history = wrapper.get_trades(from_date=dtime)
     aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
@@ -164,7 +164,7 @@ def main():
 
             if args.no_aggregate:
                 log.info(SELL_LOG_TEMPLATE.format(**line_dict))
-                f.write(LINE_TEMPLATE.format(**line_dict))
+                fd.write(LINE_TEMPLATE.format(**line_dict))
                 continue
 
             if not aggregated_line['order_id']:
@@ -188,7 +188,7 @@ def main():
             else:
                 log.info(SELL_LOG_TEMPLATE.format(**line_dict))
                 # Write current aggregated line
-                f.write(LINE_TEMPLATE.format(**aggregated_line))
+                fd.write(LINE_TEMPLATE.format(**aggregated_line))
                 aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
                 # Save current entry into new aggregation object
                 aggregated_line = line_dict
@@ -207,8 +207,8 @@ def main():
     # At the end, write remaining line
     if aggregated_line['order_id']:
         log.info(SELL_LOG_TEMPLATE.format(**aggregated_line))
-        f.write(LINE_TEMPLATE.format(**aggregated_line))
-    f.close()
+        fd.write(LINE_TEMPLATE.format(**aggregated_line))
+    fd.close()
 
 
 if __name__ == '__main__':

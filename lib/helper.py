@@ -1,45 +1,55 @@
+import logging
+from decimal import Decimal
+
 import ccgains
 import pandas as pd
-
-from decimal import Decimal
+from ccgains import reports
+from ccgains.bags import is_short_term
 from dateutil import tz
 
-from ccgains.bags import is_short_term
-from ccgains import reports
-
-import logging
 log = logging.getLogger('ccgains')
 
+
 def _parse_trade(str_list, param_locs, default_timezone):
-    """ 1-1 copy from ccgains
-    """
+    """1-1 copy from ccgains"""
     # make a dict:
     if not isinstance(param_locs, dict):
         varnames = Trade.__init__.__code__.co_varnames[1:12]
-        param_locs = dict(
-            (varnames[i], p) for i, p in enumerate(param_locs))
+        param_locs = {varnames[i]: p for i, p in enumerate(param_locs)}
 
     pdict = {}
-    for key, val in param_locs.items():
-        if isinstance(val, int):
-            if val == -1:
+    for key, value in param_locs.items():
+        if isinstance(value, int):
+            if value == -1:
                 pdict[key] = ''
             else:
-                pdict[key] = str_list[val].strip('" \n\t')
-        elif callable(val):
-            pdict[key] = val(str_list)
+                pdict[key] = str_list[value].strip('" \n\t')
+        elif callable(value):
+            pdict[key] = value(str_list)
         else:
-            pdict[key] = val
+            pdict[key] = value
 
     return Trade(default_timezone=default_timezone, **pdict)
 
+
 class Trade(ccgains.Trade):
-    """ Override handling of fee currency for bitshares
-    """
+    """Override handling of fee currency for bitshares"""
+
     def __init__(
-            self, kind, dtime, buy_currency, buy_amount,
-            sell_currency, sell_amount, fee_currency='', fee_amount=0,
-            exchange='', mark='', comment='', default_timezone=None):
+        self,
+        kind,
+        dtime,
+        buy_currency,
+        buy_amount,
+        sell_currency,
+        sell_amount,
+        fee_currency='',
+        fee_amount=0,
+        exchange='',
+        mark='',
+        comment='',
+        default_timezone=None,
+    ):
         self.kind = kind
         if buy_amount:
             self.buyval = Decimal(buy_amount)
@@ -52,9 +62,7 @@ class Trade(ccgains.Trade):
             self.sellval = Decimal()
         self.sellcur = sell_currency
         if self.sellval < 0 and self.buyval < 0:
-            raise ValueError(
-                    'Ambiguity: Only one of buy_amount or '
-                    'sell_amount may be negative')
+            raise ValueError('Ambiguity: Only one of buy_amount or ' 'sell_amount may be negative')
         elif self.buyval < 0:
             self.buyval, self.sellval = self.sellval, abs(self.buyval)
             self.buycur, self.sellcur = self.sellcur, self.buycur
@@ -81,26 +89,27 @@ class Trade(ccgains.Trade):
             self.dtime = pd.Timestamp(dtime)
         # add default timezone if not included:
         if self.dtime.tzinfo is None:
-            self.dtime = self.dtime.tz_localize(
-                tz.tzlocal() if default_timezone is None else default_timezone)
+            self.dtime = self.dtime.tz_localize(tz.tzlocal() if default_timezone is None else default_timezone)
         # internally, dtime is saved as UTC time:
         self.dtime = self.dtime.tz_convert('UTC')
 
-        if (self.feeval > 0
-                and self.feecur != buy_currency
-                and self.feecur != sell_currency):
+        if self.feeval > 0 and self.feecur != buy_currency and self.feecur != sell_currency:
             # Pretend there is no fee
             # TODO: implement more elegant solution
             log.warning('Fee in foreign currency: {} {}'.format(self.feecur, self.feeval))
             self.feeval = 0
 
-class TradeHistory(ccgains.TradeHistory):
 
+class TradeHistory(ccgains.TradeHistory):
     def append_csv(
-            self, file_name, param_locs=range(11), delimiter=',', skiprows=1,
-            default_timezone=None):
-        """ 1-1 copy from ccgains
-        """
+        self,
+        file_name,
+        param_locs=range(11),  # noqa: B008 - we're using similar interface as in ccgains
+        delimiter=',',
+        skiprows=1,
+        default_timezone=None,
+    ):
+        """1-1 copy from ccgains"""
         with open(file_name) as f:
             csvlines = f.readlines()
 
@@ -115,31 +124,29 @@ class TradeHistory(ccgains.TradeHistory):
             if not line:
                 # ignore empty lines
                 continue
-            self.tlist.append(
-                _parse_trade(line, param_locs, default_timezone))
+            self.tlist.append(_parse_trade(line, param_locs, default_timezone))
 
-        log.info("Loaded %i transactions from %s",
-                 len(self.tlist) - numtrades, file_name)
+        log.info("Loaded %i transactions from %s", len(self.tlist) - numtrades, file_name)
         # trades must be sorted:
         self.tlist.sort(key=self._trade_sort_key, reverse=False)
 
+
 class BagQueue(ccgains.BagQueue):
-    """ Override:
-        - rate when no relation passed
+    """Override:
+    - rate when no relation passed
     """
-    def pay(self, dtime, currency, amount, exchange, fee_ratio=0,
-            custom_rate=None, report_info=None):
+
+    def pay(self, dtime, currency, amount, exchange, fee_ratio=0, custom_rate=None, report_info=None):
         self._check_order(dtime)
         amount = Decimal(amount)
         fee_ratio = Decimal(fee_ratio)
-        if amount <= 0: return
+        if amount <= 0:
+            return
         exchange = str(exchange).capitalize()
         if currency == self.currency:
-            self._abort(
-                'Payments with the base currency are not relevant here.')
+            self._abort('Payments with the base currency are not relevant here.')
         if exchange not in self.bags or not self.bags[exchange]:
-            self._abort(
-                "You don't own any funds on %s" % exchange)
+            self._abort("You don't own any funds on %s" % exchange)
         if fee_ratio < 0 or fee_ratio > 1:
             self._abort("Fee ratio must be between 0 and 1.")
         if exchange not in self.totals:
@@ -149,8 +156,8 @@ class BagQueue(ccgains.BagQueue):
         if amount > total:
             self._abort(
                 "Amount to be paid ({1} {0}) is higher than total "
-                "available on {3}: {2} {0}.".format(
-                        currency, amount, total, exchange))
+                "available on {3}: {2} {0}.".format(currency, amount, total, exchange)
+            )
         # expenses (original cost of spent money):
         cost = Decimal()
         # expenses only of short term trades:
@@ -167,20 +174,18 @@ class BagQueue(ccgains.BagQueue):
             log.debug('Relation is not provided, will use bag price as rate')
         else:
             try:
-                rate = Decimal(
-                    self.relation.get_rate(dtime, currency, self.currency))
+                rate = Decimal(self.relation.get_rate(dtime, currency, self.currency))
             except KeyError:
                 self._abort(
                     'Could not fetch the price for currency_pair %s_%s on '
-                    '%s from provided CurrencyRelation object.' % (
-                            currency, self.currency, dtime))
+                    '%s from provided CurrencyRelation object.' % (currency, self.currency, dtime)
+                )
         # due payment:
         to_pay = amount
         log.info(
-            "Paying %(to_pay).8f %(curr)s from %(exchange)s "
-            "(including %(fees).8f %(curr)s fees)",
-            {'to_pay': to_pay, 'curr': currency,
-             'exchange': exchange, 'fees': to_pay * fee_ratio})
+            "Paying %(to_pay).8f %(curr)s from %(exchange)s " "(including %(fees).8f %(curr)s fees)",
+            {'to_pay': to_pay, 'curr': currency, 'exchange': exchange, 'fees': to_pay * fee_ratio},
+        )
         # Find bags with this currency and use them to pay for
         # this:
         bag_index = None
@@ -189,11 +194,11 @@ class BagQueue(ccgains.BagQueue):
             bag_index, bag = self.pick_bag(exchange, currency, start_index=bag_index)
 
             # Spend as much as possible from this bag:
-            log.info("Paying with bag from %s, containing %.8f %s",
-                     bag.dtime, bag.amount, bag.currency)
+            log.info("Paying with bag from %s, containing %.8f %s", bag.dtime, bag.amount, bag.currency)
             spent, bcost, remainder = bag.spend(to_pay)
-            log.info("Contents of bag after payment: %.8f %s (spent %.8f %s)",
-                 bag.amount, bag.currency, spent, currency)
+            log.info(
+                "Contents of bag after payment: %.8f %s (spent %.8f %s)", bag.amount, bag.currency, spent, currency
+            )
 
             # The proceeds are the value of spent amount at dtime:
             if not rate:
@@ -216,23 +221,33 @@ class BagQueue(ccgains.BagQueue):
             if bcost:
                 prof = corrproc - bcost
 
-            log.info("Profits in this transaction:\n"
-                 "    Original bag cost: %.3f %s (Price %.8f %s/%s)\n"
-                 "    Proceeds         : %.3f %s (Price %.8f %s/%s)\n"
-                 "    Proceeds w/o fees: %.3f %s\n"
-                 "    Profit           : %.3f %s\n"
-                 "    Taxable?         : %s (held for %s than a year)",
-                 bcost, self.currency, bag.price, bag.cost_currency,
-                 currency,
-                 thisproc, self.currency, rate, self.currency, currency,
-                 corrproc, self.currency,
-                 prof, self.currency,
-                 'yes' if short_term else 'no',
-                 'less' if short_term else 'more')
+            log.info(
+                "Profits in this transaction:\n"
+                "    Original bag cost: %.3f %s (Price %.8f %s/%s)\n"
+                "    Proceeds         : %.3f %s (Price %.8f %s/%s)\n"
+                "    Proceeds w/o fees: %.3f %s\n"
+                "    Profit           : %.3f %s\n"
+                "    Taxable?         : %s (held for %s than a year)",
+                bcost,
+                self.currency,
+                bag.price,
+                bag.cost_currency,
+                currency,
+                thisproc,
+                self.currency,
+                rate,
+                self.currency,
+                currency,
+                corrproc,
+                self.currency,
+                prof,
+                self.currency,
+                'yes' if short_term else 'no',
+                'less' if short_term else 'more',
+            )
 
             # Store report data:
-            repinfo = {
-                'kind': 'payment', 'buy_currency': '', 'buy_ratio': 0}
+            repinfo = {'kind': 'payment', 'buy_currency': '', 'buy_ratio': 0}
             if report_info is not None:
                 repinfo.update(report_info)
             if not repinfo.get('buy_currency', ''):
@@ -255,12 +270,13 @@ class BagQueue(ccgains.BagQueue):
                     proceeds=corrproc,
                     profit=prof,
                     buy_currency=repinfo['buy_currency'],
-                    buy_ratio=repinfo['buy_ratio']))
+                    buy_ratio=repinfo['buy_ratio'],
+                )
+            )
 
             to_pay = remainder
             if to_pay > 0:
-                log.info("Still to be paid with another bag: %.8f %s",
-                     to_pay, currency)
+                log.info("Still to be paid with another bag: %.8f %s", to_pay, currency)
             if bag.is_empty():
                 del self.bags[exchange][bag_index]
 
@@ -292,5 +308,3 @@ class BagQueue(ccgains.BagQueue):
         #  - fee cost loss          : - fee_p * st_cost
         #  = (1 - fee_p) * st_proceeds - st_cost
         return st_proc * (1 - fee_ratio) - st_cost, proc * (1 - fee_ratio)
-
-

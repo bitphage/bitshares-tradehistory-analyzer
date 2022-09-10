@@ -1,5 +1,4 @@
 import pytest
-
 from bitshares import BitShares
 
 
