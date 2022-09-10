@@ -4,14 +4,13 @@ from bitshares_tradehistory_analyzer.wrapper import Wrapper
 
 
 class MockResponseGood:
+    @staticmethod
+    def json():
+        return {'foo': 'bar'}
 
     # @staticmethod
     def raise_for_status(self):
         return None
-
-    @staticmethod
-    def json():
-        return {'foo': 'bar'}
 
 
 class MockResponseBad:
@@ -28,9 +27,9 @@ def test_init(monkeypatch):
         return MockResponseBad()
 
     monkeypatch.setattr(requests, 'get', good)
-    w = Wrapper('https://example.com', '1.2.222')
-    assert w.version == 1
+    wrapper = Wrapper('https://example.com', '1.2.222')
+    assert wrapper.version == 1
 
     monkeypatch.setattr(requests, 'get', bad)
-    w = Wrapper('https://example.com', '1.2.222')
-    assert w.version == 2
+    wrapper = Wrapper('https://example.com', '1.2.222')
+    assert wrapper.version == 2

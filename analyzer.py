@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 
-import logging
-import time
-import sys
-import os.path
 import argparse
+import logging
+import os.path
+import sys
+import time
 
-from lib.helper import TradeHistory, BagQueue
+from lib.helper import BagQueue, TradeHistory
 
 logger = logging.getLogger('ccgains')
 logger.setLevel(logging.DEBUG)
 # This is my highest logger, don't propagate to root logger:
 logger.propagate = 0
 # Reset logger in case any handlers were already added:
-for h in logger.handlers[::-1]:
-    h.close()
-    logger.removeHandler(h)
+for handler in logger.handlers[::-1]:
+    handler.close()
+    logger.removeHandler(handler)
 # Create file handler which logs even debug messages
 fname = 'ccgains_%s.log' % time.strftime("%Y%m%d-%H%M%S")
 fh = logging.FileHandler(fname, mode='w')
@@ -111,7 +111,10 @@ def main():
 
     formatters = {}
     if args.precision:
-        btc_formatter = lambda x: '{:.{prec}f}'.format(x, prec=args.precision)
+
+        def btc_formatter(value):
+            return '{:.{prec}f}'.format(value, prec=args.precision)
+
         formatters = {'Purchase cost': btc_formatter, 'Proceeds': btc_formatter, 'Profit': btc_formatter}
 
     bf.report.export_report_to_pdf(

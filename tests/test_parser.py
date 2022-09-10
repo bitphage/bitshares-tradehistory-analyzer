@@ -1,5 +1,6 @@
-import pytest
 import json
+
+import pytest
 
 from bitshares_tradehistory_analyzer.parser import Parser
 

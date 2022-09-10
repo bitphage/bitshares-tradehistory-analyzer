@@ -1,7 +1,6 @@
 import copy
-import logging
 import json
-
+import logging
 from decimal import Decimal
 
 from bitshares.account import Account
@@ -14,10 +13,10 @@ log = logging.getLogger(__name__)
 
 
 class Parser:
-    """ Entries parser
+    """Entries parser
 
-        :param BitShares bitshares_instance:
-        :param Account account:
+    :param BitShares bitshares_instance:
+    :param Account account:
     """
 
     def __init__(self, bitshares_instance, account):
@@ -25,9 +24,9 @@ class Parser:
         self.account = Account(account, bitshares_instance=self.bitshares)
 
     def load_op(self, entry):
-        """ Try to load operation from account history entry
+        """Try to load operation from account history entry
 
-            :param dict entry:
+        :param dict entry:
         """
         try:
             op = json.loads(entry['operation_history']['op'])[1]
@@ -39,10 +38,10 @@ class Parser:
         return op
 
     def parse_transfer_entry(self, entry):
-        """ Parse single transfer entry into a dict object suitable for writing line
+        """Parse single transfer entry into a dict object suitable for writing line
 
-            :param dict entry: elastic wrapper entry
-            :return: dict object suitable for writing line
+        :param dict entry: elastic wrapper entry
+        :return: dict object suitable for writing line
         """
 
         op_id = entry['account_history']['operation_id']
@@ -75,10 +74,10 @@ class Parser:
         return data
 
     def parse_trade_entry(self, entry):
-        """ Parse single trade entry (fill order) into a dict object suitable for writing line
+        """Parse single trade entry (fill order) into a dict object suitable for writing line
 
-            :param dict entry: elastic wrapper entry
-            :return: dict object suitable for writing line
+        :param dict entry: elastic wrapper entry
+        :return: dict object suitable for writing line
         """
 
         op_id = entry['account_history']['operation_id']

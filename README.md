@@ -2,8 +2,7 @@ Bitshares trading history analyzer
 ==================================
 
 This is a set of scripts for analyzing trading history on the [Bitshares DEX](https://bitshares.org) and thus for all
-exchanges running on top ([RuDEX](https://rudex.org/), [Cryptobridge](https://crypto-bridge.org/),
-[Openledger](https://openledger.info/), [SparkDex](https://dex.bitspark.io/) etc).
+exchanges running on the same software, e.g. ([RuDEX](https://rudex.org/).
 
 Supported inventory accounting methods:
 
@@ -28,28 +27,17 @@ Limitations
   considering profit as a result of buy+sell only. So such deposited and then sold currency will be counted for 0
   profit.
 
-Installation using pipenv
+Installation using poetry
 -------------------------
 
 1. Make sure you have installed required packages: `apt-get install gcc make libssl-dev`
-2. Install [pipenv](https://docs.pipenv.org/)
-
-```
-# Install pip and pipenv
-sudo apt install python3-pip python3-dev
-pip3 install --user pipenv
-
-# Add pipenv (and other python scripts) to PATH
-echo "PATH=$HOME/.local/bin:$PATH" >> ~/.bashrc
-source ~/.bashrc
-```
-
-3. Run `pipenv install` to install the dependencies
+2. Install [poetry](https://python-poetry.org/)
+3. Run `poetry install` to install the dependencies
 4. Copy `common.yml.example` to `common.yml` and change variables according to your needs
 5. Now you're ready to run scripts:
 
 ```
-pipenv shell
+poetry shell
 ./script.py
 exit
 ```

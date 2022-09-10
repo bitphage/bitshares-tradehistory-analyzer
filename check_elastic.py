@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+
 from ruamel.yaml import YAML
 
 from bitshares_tradehistory_analyzer.wrapper import Wrapper
