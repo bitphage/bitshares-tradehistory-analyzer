@@ -6,7 +6,7 @@ import os.path
 import sys
 import time
 
-from lib.helper import BagQueue, TradeHistory
+from bitshares_tradehistory_analyzer.ccgains_helper import BagQueue, TradeHistory
 
 logger = logging.getLogger('ccgains')
 logger.setLevel(logging.DEBUG)
