@@ -66,6 +66,8 @@ class Wrapper:
             url = urllib.parse.urljoin(self.url, 'get_account_history')
         elif self.version == 2:
             url = urllib.parse.urljoin(self.url, 'account_history')
+        else:
+            raise ValueError("Unsupported ES wrapper version set")
 
         payload = {
             'account_id': self.account_id,
