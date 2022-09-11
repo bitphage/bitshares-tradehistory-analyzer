@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: https://api.bitshares.ws/openexplorer/es/get_account_history?account_id=1.2.22&size=1&operation_type=0&sort_by=account_history.sequence&type=data&agg_field=operation_type
+  response:
+    body:
+      string: '{"detail":"Not Found"}'
+    headers:
+      Strict-Transport-Security:
+      - max-age=15768000
+      content-length:
+      - '22'
+      content-type:
+      - application/json
+      date:
+      - Sun, 11 Sep 2022 15:27:23 GMT
+      server:
+      - uvicorn
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: https://api.bitshares.ws/openexplorer/es/account_history?account_id=1.2.22&size=1&operation_type=0&sort_by=account_history.sequence&type=data&agg_field=operation_type
+  response:
+    body:
+      string: '[]'
+    headers:
+      Strict-Transport-Security:
+      - max-age=15768000
+      content-length:
+      - '2'
+      content-type:
+      - application/json
+      date:
+      - Sun, 11 Sep 2022 15:27:23 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1

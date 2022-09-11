@@ -36,3 +36,10 @@ def test_version_autodetect_2(monkeypatch):
 @pytest.mark.vcr()
 def test_is_alive_wrapper_ok():
     assert Wrapper.is_alive_v2("https://api.bitshares.ws/") is True
+
+
+@pytest.mark.vcr()
+def test_detect_version():
+    wrapper = Wrapper("https://api.bitshares.ws/openexplorer/es/", "1.2.222")
+    wrapper.detect_version()
+    assert wrapper.version == 2
