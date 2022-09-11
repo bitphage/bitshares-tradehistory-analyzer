@@ -28,9 +28,10 @@ class Wrapper:
         return result
 
     @staticmethod
-    def is_alive(url):
+    def is_alive(url, endpoint="is_alive"):
         """Check built-it ES wrapper metric to check whether it's alive"""
-        url = urllib.parse.urljoin(url, 'is_alive')
+        # Note: not usable for new BitShares Insight API
+        url = urllib.parse.urljoin(url, endpoint)
         try:
             response = requests.get(url, timeout=5)
         except requests.exceptions.ConnectionError:
@@ -44,6 +45,10 @@ class Wrapper:
                 return False
 
         return False
+
+    @staticmethod
+    def is_alive_v2(url):
+        return Wrapper.is_alive(url, endpoint="status")
 
     def detect_version(self):
         params = {'size': 1, 'account_id': '1.2.22'}
