@@ -1,3 +1,6 @@
 *.csv
 *.swp
 config.yml
+*.pdf
+*.json
+__pycache__/
