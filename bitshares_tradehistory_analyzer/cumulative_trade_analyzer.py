@@ -112,3 +112,5 @@ class CumulativeAnalyzer:
                 self.process_transfer(trade)
             elif trade.kind is TradeKind.trade:
                 self.process_trade(trade)
+            else:
+                raise ValueError(f"Unexpected trade kind: {trade.kind}")
