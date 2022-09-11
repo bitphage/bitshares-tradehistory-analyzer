@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Dict
+from typing import Dict, Optional
 
 import pandas as pd
 
@@ -104,8 +104,13 @@ class CumulativeAnalyzer:
         stats.spent_amount += trade.sellval
         stats.last_trade_timestamp = trade.dtime
 
-    def run_analysis(self):
+    def run_analysis(self, start: Optional[pd.Timestamp] = None, end: Optional[pd.Timestamp] = None) -> None:
+        self.reset_stats()
         for trade in self.th.tlist:
+            if start is not None and trade.dtime < start:
+                continue
+            if end is not None and trade.dtime >= end:
+                break
             if trade.kind is TradeKind.deposit:
                 self.process_transfer(trade)
             elif trade.kind is TradeKind.withdrawal:
@@ -114,3 +119,7 @@ class CumulativeAnalyzer:
                 self.process_trade(trade)
             else:
                 raise ValueError(f"Unexpected trade kind: {trade.kind}")
+
+    def reset_stats(self):
+        self.transfer_stats.clear()
+        self.trade_stats.clear()

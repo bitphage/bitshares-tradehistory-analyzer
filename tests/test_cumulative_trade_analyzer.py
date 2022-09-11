@@ -98,3 +98,25 @@ def test_trade_results(analyzer):
     assert df is not None
     btc_result = df.loc[df["Acquired Asset"] == "BTC"]
     assert btc_result["Spent Amount"].item() == Decimal("9000")
+
+
+def test_run_analysis_time_ranged(analyzer):
+    start = pd.Timestamp("2021-01-01", tz="UTC")
+    end = pd.Timestamp("2021-06-01", tz="UTC")
+    trade_ts_before_start = start - pd.Timedelta(hours=1)
+    trade_ts_in_between = pd.Timestamp("2021-03-01", tz="UTC")
+    trade_ts_after_end = end + pd.Timedelta(hours=1)
+    for ts in (trade_ts_before_start, start, trade_ts_in_between, end, trade_ts_after_end):
+        trade = Trade(
+            kind=TradeKind.deposit,
+            dtime=ts,
+            buy_currency="BTC",
+            buy_amount=Decimal("0.1"),
+            sell_currency=None,
+            sell_amount=ZERO,
+        )
+        analyzer.th.tlist.append(trade)
+    analyzer.run_analysis(start, end)
+    stats = analyzer.transfer_stats["BTC"]
+    assert stats.deposit_amount == Decimal("0.2")
+    assert stats.last_transfer_timestamp == trade_ts_in_between
