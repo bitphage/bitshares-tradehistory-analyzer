@@ -6,6 +6,11 @@ import requests
 from bitshares_tradehistory_analyzer.wrapper import Wrapper
 
 
+@pytest.fixture()
+def working_es_url():
+    return "https://api.bitshares.ws/openexplorer/es/"
+
+
 class MockResponseGood:
     @staticmethod
     def json():
@@ -39,7 +44,39 @@ def test_is_alive_wrapper_ok():
 
 
 @pytest.mark.vcr()
-def test_detect_version():
-    wrapper = Wrapper("https://api.bitshares.ws/openexplorer/es/", "1.2.222")
+def test_detect_version(working_es_url):
+    wrapper = Wrapper(working_es_url, "1.2.222")
     wrapper.detect_version()
     assert wrapper.version == 2
+
+
+@pytest.mark.vcr()
+def test_get_transfers(working_es_url):
+    wrapper = Wrapper(working_es_url, "1.2.1607166", size=5)
+    transfers = wrapper.get_transfers()
+    assert transfers is not None
+    assert len(transfers) == 5
+
+
+@pytest.mark.vcr()
+def test_get_transfers_from_date(working_es_url):
+    wrapper = Wrapper(working_es_url, "1.2.1607166", size=5)
+    transfers = wrapper.get_transfers(from_date="2019-05-23T06:13:54")
+    assert transfers is not None
+    assert len(transfers) == 5
+
+
+@pytest.mark.vcr()
+def test_get_trades(working_es_url):
+    wrapper = Wrapper(working_es_url, "1.2.1607166", size=5)
+    trades = wrapper.get_trades()
+    assert trades is not None
+    assert len(trades) == 5
+
+
+@pytest.mark.vcr()
+def test_get_global_settlements(working_es_url):
+    wrapper = Wrapper(working_es_url, "1.2.12376", size=5)  # abit
+    settlements = wrapper.get_global_settlements()
+    assert settlements is not None
+    assert len(settlements) == 5
