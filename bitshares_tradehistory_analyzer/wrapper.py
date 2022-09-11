@@ -7,10 +7,10 @@ import requests
 class Wrapper:
     """Wrapper for querying bitshares elasticsearch wrapper"""
 
-    def __init__(self, url, account_id):
+    def __init__(self, url, account_id, size=200):
         self.url = url
         self.account_id = account_id
-        self.size = 200
+        self.size = size
         self.version = 1
 
         self.detect_version()
