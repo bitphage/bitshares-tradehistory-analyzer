@@ -1,5 +1,6 @@
 import logging
 from decimal import Decimal
+from enum import Enum
 
 import ccgains
 import pandas as pd
@@ -8,6 +9,12 @@ from ccgains.bags import is_short_term
 from dateutil import tz
 
 log = logging.getLogger('ccgains')
+
+
+class TradeKind(Enum):
+    DEPOSIT = "Deposit"
+    WITHDRAWAL = "Withdrawal"
+    TRADE = "Trade"
 
 
 def _parse_trade(str_list, param_locs, default_timezone):
