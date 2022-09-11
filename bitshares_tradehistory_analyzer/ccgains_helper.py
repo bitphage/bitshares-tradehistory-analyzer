@@ -12,9 +12,9 @@ log = logging.getLogger('ccgains')
 
 
 class TradeKind(Enum):
-    deposit = "Deposit"
-    withdrawal = "Withdrawal"
-    trade = "Trade"
+    DEPOSIT = "Deposit"
+    WITHDRAWAL = "Withdrawal"
+    TRADE = "Trade"
 
 
 def _parse_trade(str_list, param_locs, default_timezone):

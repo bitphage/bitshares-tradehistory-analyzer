@@ -85,10 +85,10 @@ class CumulativeAnalyzer:
         self.th.append_csv(csv_file)
 
     def process_transfer(self, trade: Trade):
-        if trade.kind is TradeKind.deposit:
+        if trade.kind is TradeKind.DEPOSIT:
             asset: Asset = trade.buycur
             self.transfer_stats.setdefault(asset, AssetTransferStats(asset=asset)).deposit_amount += trade.buyval
-        elif trade.kind is TradeKind.withdrawal:
+        elif trade.kind is TradeKind.WITHDRAWAL:
             asset = trade.sellcur
             self.transfer_stats.setdefault(asset, AssetTransferStats(asset=asset)).withdraw_amount += trade.sellval
         else:
@@ -111,11 +111,11 @@ class CumulativeAnalyzer:
                 continue
             if end is not None and trade.dtime >= end:
                 break
-            if trade.kind is TradeKind.deposit:
+            if trade.kind is TradeKind.DEPOSIT:
                 self.process_transfer(trade)
-            elif trade.kind is TradeKind.withdrawal:
+            elif trade.kind is TradeKind.WITHDRAWAL:
                 self.process_transfer(trade)
-            elif trade.kind is TradeKind.trade:
+            elif trade.kind is TradeKind.TRADE:
                 self.process_trade(trade)
             else:
                 raise ValueError(f"Unexpected trade kind: {trade.kind}")
