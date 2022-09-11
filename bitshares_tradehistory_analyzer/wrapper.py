@@ -61,6 +61,14 @@ class Wrapper:
         params = {'operation_type': 4}
         return self._query(params, *args, **kwargs)
 
+    def get_global_settlements(self, *args, **kwargs):
+        """Get settlements performed when asset is in GS.
+
+        Regular settlements are counted as trades, but when asset is globally settled, there is a separate operation.
+        """
+        params = {'operation_type': 17}
+        return self._query(params, *args, **kwargs)
+
     def _query(self, params, *args, **kwargs):
         if self.version == 1:
             url = urllib.parse.urljoin(self.url, 'get_account_history')
