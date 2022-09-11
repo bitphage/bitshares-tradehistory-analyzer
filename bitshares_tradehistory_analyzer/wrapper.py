@@ -54,13 +54,11 @@ class Wrapper:
                 self.version = 2
 
     def get_transfers(self, *args, **kwargs):
-        params = {}
-        params['operation_type'] = 0
+        params = {'operation_type': 0}
         return self._query(params, *args, **kwargs)
 
     def get_trades(self, *args, **kwargs):
-        params = {}
-        params['operation_type'] = 4
+        params = {'operation_type': 4}
         return self._query(params, *args, **kwargs)
 
     def _query(self, params, *args, **kwargs):
