@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+import pandas as pd
 import pytest
 
 from bitshares_tradehistory_analyzer.ccgains_helper import Trade, TradeKind
@@ -25,35 +26,42 @@ def test_pair_trade_stats_dict_access():
 
 
 def test_process_deposit(analyzer):
+    ts = pd.Timestamp("2021-01-01", tz="UTC")
     trade = Trade(
         kind=TradeKind.deposit,
-        dtime="2021-01-01",
+        dtime=ts,
         buy_currency="BTC",
         buy_amount=Decimal("0.1"),
         sell_currency=None,
         sell_amount=ZERO,
     )
     analyzer.process_transfer(trade)
-    assert analyzer.transfer_stats[trade.buycur].deposit_amount == Decimal("0.1")
+    stats = analyzer.transfer_stats[trade.buycur]
+    assert stats.deposit_amount == Decimal("0.1")
+    assert stats.last_transfer_timestamp == ts
 
 
 def test_process_withdrawal(analyzer):
+    ts = pd.Timestamp("2021-01-01", tz="UTC")
     trade = Trade(
         kind=TradeKind.withdrawal,
-        dtime="2021-01-01",
+        dtime=ts,
         sell_currency="BTC",
         sell_amount=Decimal("0.1"),
         buy_currency=None,
         buy_amount=ZERO,
     )
     analyzer.process_transfer(trade)
-    assert analyzer.transfer_stats[trade.sellcur].withdraw_amount == Decimal("0.1")
+    stats = analyzer.transfer_stats[trade.sellcur]
+    assert stats.withdraw_amount == Decimal("0.1")
+    assert stats.last_transfer_timestamp == ts
 
 
 def test_process_trade(analyzer):
+    ts = pd.Timestamp("2021-01-01", tz="UTC")
     trade = Trade(
         kind=TradeKind.trade,
-        dtime="2021-01-01",
+        dtime=ts,
         buy_currency="BTC",
         buy_amount=Decimal("0.1"),
         sell_currency="USDT",
@@ -66,6 +74,7 @@ def test_process_trade(analyzer):
     assert stats.acquired_amount == Decimal("0.1")
     assert stats.spent_asset == "USDT"
     assert stats.acquired_asset == "BTC"
+    assert stats.last_trade_timestamp == ts
 
 
 def test_transfer_results(analyzer):

@@ -26,6 +26,7 @@ class PairTradeStats:
     acquired_asset: Asset
     spent_amount: Decimal = ZERO
     acquired_amount: Decimal = ZERO
+    last_trade_timestamp: pd.Timestamp = pd.Timestamp(0, unit="ms")
 
     @property
     def pair(self) -> AssetPair:
@@ -37,6 +38,7 @@ class AssetTransferStats:
     asset: Asset
     deposit_amount: Decimal = ZERO
     withdraw_amount: Decimal = ZERO
+    last_transfer_timestamp: pd.Timestamp = pd.Timestamp(0, unit="ms")
 
 
 class CumulativeAnalyzer:
@@ -54,10 +56,11 @@ class CumulativeAnalyzer:
                     "Deposited": stat.deposit_amount,
                     "Withdrawn": stat.withdraw_amount,
                     "Delta": stat.deposit_amount - stat.withdraw_amount,
+                    "Last Transfer Timestamp": stat.last_transfer_timestamp,
                 }
                 for stat in self.transfer_stats.values()
             ],
-            columns=["Asset", "Deposited", "Withdrawn", "Delta"],
+            columns=["Asset", "Deposited", "Withdrawn", "Delta", "Last Transfer Timestamp"],
         )
         return transfer_results
 
@@ -70,10 +73,11 @@ class CumulativeAnalyzer:
                     "Spent Amount": stat.spent_amount,
                     "Acquired Asset": stat.acquired_asset,
                     "Acquired Amount": stat.acquired_amount,
+                    "Last Trade Timestamp": stat.last_trade_timestamp,
                 }
                 for stat in self.trade_stats.values()
             ],
-            columns=["Spent Asset", "Spent Amount", "Acquired Asset", "Acquired Amount"],
+            columns=["Spent Asset", "Spent Amount", "Acquired Asset", "Acquired Amount", "Last Trade Timestamp"],
         )
         return trade_results
 
@@ -87,6 +91,9 @@ class CumulativeAnalyzer:
         elif trade.kind is TradeKind.withdrawal:
             asset = trade.sellcur
             self.transfer_stats.setdefault(asset, AssetTransferStats(asset=asset)).withdraw_amount += trade.sellval
+        else:
+            raise ValueError(f"Unexpected trade kind: {trade.kind}")
+        self.transfer_stats[asset].last_transfer_timestamp = trade.dtime
 
     def process_trade(self, trade: Trade):
         pair: AssetPair = pair_from_trade(trade)
@@ -95,6 +102,7 @@ class CumulativeAnalyzer:
         )
         stats.acquired_amount += trade.buyval
         stats.spent_amount += trade.sellval
+        stats.last_trade_timestamp = trade.dtime
 
     def run_analysis(self):
         for trade in self.th.tlist:
