@@ -28,7 +28,7 @@ def test_pair_trade_stats_dict_access():
 def test_process_deposit(analyzer):
     ts = pd.Timestamp("2021-01-01", tz="UTC")
     trade = Trade(
-        kind=TradeKind.DEPOSIT,
+        kind=TradeKind.DEPOSIT.value,
         dtime=ts,
         buy_currency="BTC",
         buy_amount=Decimal("0.1"),
@@ -44,7 +44,7 @@ def test_process_deposit(analyzer):
 def test_process_withdrawal(analyzer):
     ts = pd.Timestamp("2021-01-01", tz="UTC")
     trade = Trade(
-        kind=TradeKind.WITHDRAWAL,
+        kind=TradeKind.WITHDRAWAL.value,
         dtime=ts,
         sell_currency="BTC",
         sell_amount=Decimal("0.1"),
@@ -60,7 +60,7 @@ def test_process_withdrawal(analyzer):
 def test_process_trade(analyzer):
     ts = pd.Timestamp("2021-01-01", tz="UTC")
     trade = Trade(
-        kind=TradeKind.TRADE,
+        kind=TradeKind.TRADE.value,
         dtime=ts,
         buy_currency="BTC",
         buy_amount=Decimal("0.1"),
@@ -108,7 +108,7 @@ def test_run_analysis_time_ranged(analyzer):
     trade_ts_after_end = end + pd.Timedelta(hours=1)
     for ts in (trade_ts_before_start, start, trade_ts_in_between, end, trade_ts_after_end):
         trade = Trade(
-            kind=TradeKind.DEPOSIT,
+            kind=TradeKind.DEPOSIT.value,
             dtime=ts,
             buy_currency="BTC",
             buy_amount=Decimal("0.1"),
