@@ -42,6 +42,8 @@ class AssetTransferStats:
 
 
 class CumulativeAnalyzer:
+    """Analyzes transfers and trades and produces summary result."""
+
     def __init__(self):
         self.th = TradeHistory()
         self.transfer_stats: Dict[Asset, AssetTransferStats] = {}
@@ -82,6 +84,7 @@ class CumulativeAnalyzer:
         return trade_results
 
     def append_csv(self, csv_file: str):
+        # Note: ccgains is sorting trades on each append
         self.th.append_csv(csv_file)
 
     def process_transfer(self, trade: Trade):
