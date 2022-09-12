@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: https://api.bitshares.ws/openexplorer/es/get_account_history?account_id=1.2.22&size=1&operation_type=0&sort_by=account_history.sequence&type=data&agg_field=operation_type
+  response:
+    body:
+      string: '{"detail":"Not Found"}'
+    headers:
+      Strict-Transport-Security:
+      - max-age=15768000
+      content-length:
+      - '22'
+      content-type:
+      - application/json
+      date:
+      - Sun, 11 Sep 2022 15:34:00 GMT
+      server:
+      - uvicorn
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: https://api.bitshares.ws/openexplorer/es/account_history?account_id=1.2.1607166&size=5&operation_type=0&sort_by=account_history.sequence&type=data&agg_field=operation_type
+  response:
+    body:
+      string: '[{"account_history":{"id":"2.9.874991834","account":"1.2.1607166","operation_id":"1.11.852939916","sequence":2,"next":"2.9.872861808"},"operation_history":{"trx_in_block":5,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":45468,"asset_id":"1.3.0"},"from":"1.2.379048","to":"1.2.1607166","extensions":[],"amount_":{"amount":10900000,"asset_id":"1.3.113"}}},"operation_type":0,"operation_id_num":852939916,"block_data":{"block_num":37040113,"block_time":"2019-04-30T20:23:39","trx_id":"c6d15d887e62fa670789e76fb94544bda09d7b57"}},{"account_history":{"id":"2.9.876004269","account":"1.2.1607166","operation_id":"1.11.853932690","sequence":43,"next":"2.9.875728153"},"operation_history":{"trx_in_block":5,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":1963,"asset_id":"1.3.113"},"from":"1.2.374575","to":"1.2.1607166","extensions":[],"amount_":{"amount":2565749,"asset_id":"1.3.113"}}},"operation_type":0,"operation_id_num":853932690,"block_data":{"block_num":37067497,"block_time":"2019-05-01T19:16:21","trx_id":"e77d712bce30fce39353389e2f7600e71d88d6fa"}},{"account_history":{"id":"2.9.894975749","account":"1.2.1607166","operation_id":"1.11.872568694","sequence":761,"next":"2.9.893892909"},"operation_history":{"trx_in_block":23,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":45468,"asset_id":"1.3.0"},"from":"1.2.379048","to":"1.2.1607166","extensions":[],"amount_":{"amount":531340,"asset_id":"1.3.113"}}},"operation_type":0,"operation_id_num":872568694,"block_data":{"block_num":37526213,"block_time":"2019-05-17T20:07:48","trx_id":"05e5079ed12436a59a30917dfa088ce062b2094d"}},{"account_history":{"id":"2.9.895996088","account":"1.2.1607166","operation_id":"1.11.873570529","sequence":821,"next":"2.9.895851675"},"operation_history":{"trx_in_block":18,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":45468,"asset_id":"1.3.0"},"from":"1.2.360553","to":"1.2.1607166","extensions":[],"amount_":{"amount":5000000,"asset_id":"1.3.113"}}},"operation_type":0,"operation_id_num":873570529,"block_data":{"block_num":37553337,"block_time":"2019-05-18T18:51:03","trx_id":"72d621069cd63826c1037e0a6969d365320542c5"}},{"account_history":{"id":"2.9.901224784","account":"1.2.1607166","operation_id":"1.11.878718746","sequence":964,"next":"2.9.901221883"},"operation_history":{"trx_in_block":6,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":45468,"asset_id":"1.3.0"},"from":"1.2.379048","to":"1.2.1607166","extensions":[],"amount_":{"amount":2000000,"asset_id":"1.3.113"}}},"operation_type":0,"operation_id_num":878718746,"block_data":{"block_num":37681492,"block_time":"2019-05-23T06:13:54","trx_id":"ed2bbce3afd4efee3434aa74c1e83b839b775423"}}]'
+    headers:
+      Strict-Transport-Security:
+      - max-age=15768000
+      content-length:
+      - '2866'
+      content-type:
+      - application/json
+      date:
+      - Sun, 11 Sep 2022 15:34:01 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1

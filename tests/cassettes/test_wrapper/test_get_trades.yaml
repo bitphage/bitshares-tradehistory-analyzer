@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: https://api.bitshares.ws/openexplorer/es/get_account_history?account_id=1.2.22&size=1&operation_type=0&sort_by=account_history.sequence&type=data&agg_field=operation_type
+  response:
+    body:
+      string: '{"detail":"Not Found"}'
+    headers:
+      Strict-Transport-Security:
+      - max-age=15768000
+      content-length:
+      - '22'
+      content-type:
+      - application/json
+      date:
+      - Sun, 11 Sep 2022 15:42:38 GMT
+      server:
+      - uvicorn
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: https://api.bitshares.ws/openexplorer/es/account_history?account_id=1.2.1607166&size=5&operation_type=4&sort_by=account_history.sequence&type=data&agg_field=operation_type
+  response:
+    body:
+      string: '[{"account_history":{"id":"2.9.874999340","account":"1.2.1607166","operation_id":"1.11.852947316","sequence":4,"next":"2.9.874999339"},"operation_history":{"trx_in_block":1,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":1,"op":"","op_object":{"fee":{"amount":0,"asset_id":"1.3.0"},"order_id":"1.7.352856621","account_id":"1.2.1607166","pays":{"amount":1000000,"asset_id":"1.3.113"},"receives":{"amount":29980908,"asset_id":"1.3.0"},"fill_price":{"base":{"amount":500000000,"asset_id":"1.3.0"},"quote":{"amount":16677280,"asset_id":"1.3.113"}},"is_maker":false}},"operation_type":4,"operation_id_num":852947316,"block_data":{"block_num":37040343,"block_time":"2019-04-30T20:35:09","trx_id":"c36f3c1b03f0eefed6fce7b974c5b8fde3f7d124"}},{"account_history":{"id":"2.9.875101346","account":"1.2.1607166","operation_id":"1.11.853047161","sequence":6,"next":"2.9.874999383"},"operation_history":{"trx_in_block":15,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":2,"op":"","op_object":{"fee":{"amount":404,"asset_id":"1.3.113"},"order_id":"1.7.352856645","account_id":"1.2.1607166","pays":{"amount":29975856,"asset_id":"1.3.0"},"receives":{"amount":1010000,"asset_id":"1.3.113"},"fill_price":{"base":{"amount":29975856,"asset_id":"1.3.0"},"quote":{"amount":1010000,"asset_id":"1.3.113"}},"is_maker":true}},"operation_type":4,"operation_id_num":853047161,"block_data":{"block_num":37043212,"block_time":"2019-04-30T22:58:54","trx_id":"6c40e5fdad7e89210eb03cd7fee33623918e6ba9"}},{"account_history":{"id":"2.9.875101495","account":"1.2.1607166","operation_id":"1.11.853047304","sequence":8,"next":"2.9.875101494"},"operation_history":{"trx_in_block":0,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":1,"op":"","op_object":{"fee":{"amount":0,"asset_id":"1.3.0"},"order_id":"1.7.352900263","account_id":"1.2.1607166","pays":{"amount":1000000,"asset_id":"1.3.113"},"receives":{"amount":29678884,"asset_id":"1.3.0"},"fill_price":{"base":{"amount":54400000,"asset_id":"1.3.0"},"quote":{"amount":1832953,"asset_id":"1.3.113"}},"is_maker":false}},"operation_type":4,"operation_id_num":853047304,"block_data":{"block_num":37043217,"block_time":"2019-04-30T22:59:09","trx_id":"6e02e673727b58a4e8d3c906ed375d53b273fde9"}},{"account_history":{"id":"2.9.875161289","account":"1.2.1607166","operation_id":"1.11.853105966","sequence":10,"next":"2.9.875101567"},"operation_history":{"trx_in_block":40,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":4,"op":"","op_object":{"fee":{"amount":404,"asset_id":"1.3.113"},"order_id":"1.7.352900292","account_id":"1.2.1607166","pays":{"amount":29673832,"asset_id":"1.3.0"},"receives":{"amount":1010000,"asset_id":"1.3.113"},"fill_price":{"base":{"amount":29673832,"asset_id":"1.3.0"},"quote":{"amount":1010000,"asset_id":"1.3.113"}},"is_maker":true}},"operation_type":4,"operation_id_num":853105966,"block_data":{"block_num":37044571,"block_time":"2019-05-01T00:07:09","trx_id":"e849522684d7766f6170ce32c4e815f23c23b345"}},{"account_history":{"id":"2.9.875162223","account":"1.2.1607166","operation_id":"1.11.853106898","sequence":12,"next":"2.9.875162222"},"operation_history":{"trx_in_block":25,"op_in_trx":0,"operation_result":"[0,{}]","virtual_op":1,"op":"","op_object":{"fee":{"amount":0,"asset_id":"1.3.0"},"order_id":"1.7.352926638","account_id":"1.2.1607166","pays":{"amount":340910,"asset_id":"1.3.113"},"receives":{"amount":10000000,"asset_id":"1.3.0"},"fill_price":{"base":{"amount":10000000,"asset_id":"1.3.0"},"quote":{"amount":340910,"asset_id":"1.3.113"}},"is_maker":false}},"operation_type":4,"operation_id_num":853106898,"block_data":{"block_num":37044590,"block_time":"2019-05-01T00:08:06","trx_id":"4a3a8cae090c5ed33a11d529508a51666b84dca2"}}]'
+    headers:
+      Strict-Transport-Security:
+      - max-age=15768000
+      content-length:
+      - '3707'
+      content-type:
+      - application/json
+      date:
+      - Sun, 11 Sep 2022 15:42:38 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1

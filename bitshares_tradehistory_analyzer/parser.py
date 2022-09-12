@@ -2,6 +2,7 @@ import copy
 import json
 import logging
 from decimal import Decimal
+from typing import Any, Dict, List
 
 from bitshares.account import Account
 from bitshares.amount import Amount
@@ -10,6 +11,14 @@ from bitshares.asset import Asset
 from .consts import LINE_DICT_TEMPLATE
 
 log = logging.getLogger(__name__)
+
+
+class ParserError(Exception):
+    pass
+
+
+class UnsupportedSettleEntry(ParserError):
+    pass
 
 
 class Parser:
@@ -35,6 +44,13 @@ class Parser:
                 op = entry['operation_history']['op_object']
             except TypeError:
                 raise ValueError('Could not find op data in op %s', entry['account_history']['operation_id'])
+        return op
+
+    def load_operation_result(self, entry: Dict[str, Any]) -> List[Any]:
+        try:
+            op = json.loads(entry['operation_history']['operation_result'])
+        except json.decoder.JSONDecodeError:
+            raise ValueError(f'Could not find operation result data in entry: {entry}')
         return op
 
     def parse_transfer_entry(self, entry):
@@ -93,7 +109,7 @@ class Parser:
         fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
 
         # Subtract fee from buy_amount
-        # For ccgains, any fees for the transaction should already have been substracted from *amount*, but included
+        # For ccgains, any fees for the transaction should already have been subtracted from *amount*, but included
         # in *cost*.
         if fee_asset.symbol == buy_asset.symbol:
             buy_amount -= fee_amount
@@ -107,6 +123,55 @@ class Parser:
         data['fee_amount'] = fee_amount
         data['comment'] = op_id
         data['order_id'] = op['order_id']
+        data['prec'] = max(sell_asset['precision'], buy_asset['precision'])
+
+        # Prevent division by zero
+        price = Decimal('0')
+        price_inverted = Decimal('0')
+        if sell_amount and buy_amount:
+            price = buy_amount / sell_amount
+            price_inverted = sell_amount / buy_amount
+
+        data['price'] = price
+        data['price_inverted'] = price_inverted
+        data['date'] = entry['block_data']['block_time']
+
+        return data
+
+    def parse_settle_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
+        op_id = entry['account_history']['operation_id']
+        op = self.load_op(entry)
+        operation_result = self.load_operation_result(entry)
+        if operation_result[0] != 5:
+            # We are not interested in regular settlements, because their results are filled orders
+            raise UnsupportedSettleEntry
+
+        op_result_data = operation_result[1]
+        # TODO: is it possible to have more than 1 entry in 'paid'/'received'???
+        sell_asset = Asset(op_result_data['paid'][0]['asset_id'], bitshares_instance=self.bitshares)
+        sell_amount = Decimal(op_result_data['paid'][0]['amount']).scaleb(-sell_asset['precision'])
+        buy_asset = Asset(op_result_data['received'][0]['asset_id'], bitshares_instance=self.bitshares)
+        buy_amount = Decimal(op_result_data['received'][0]['amount']).scaleb(-buy_asset['precision'])
+        log.info(f'GS asset settle: {sell_amount} {sell_asset.symbol} -> {buy_amount} {buy_asset.symbol}')
+        # TODO: can we also expect non-0 fee from operation_result?
+        fee_asset = Asset(op['fee']['asset_id'], bitshares_instance=self.bitshares)
+        fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
+
+        # Subtract fee from buy_amount
+        # For ccgains, any fees for the transaction should already have been subtracted from *amount*, but included
+        # in *cost*.
+        if fee_asset.symbol == buy_asset.symbol:
+            buy_amount -= fee_amount
+
+        data = copy.deepcopy(LINE_DICT_TEMPLATE)
+        data['kind'] = 'Trade'
+        data['sell_cur'] = sell_asset.symbol
+        data['sell_amount'] = sell_amount
+        data['buy_cur'] = buy_asset.symbol
+        data['buy_amount'] = buy_amount
+        data['fee_cur'] = fee_asset.symbol
+        data['fee_amount'] = fee_amount
+        data['comment'] = op_id
         data['prec'] = max(sell_asset['precision'], buy_asset['precision'])
 
         # Prevent division by zero
