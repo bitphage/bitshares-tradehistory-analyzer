@@ -3,6 +3,8 @@ import logging
 import os.path
 import time
 from decimal import Decimal
+from pathlib import Path
+from typing import Optional, Tuple, Union
 
 from bitshares import BitShares
 
@@ -19,11 +21,11 @@ SELL_LOG_TEMPLATE = (
 )
 
 
-def get_continuation_point(filename):
+def get_continuation_point(filename: Union[str, Path]) -> Tuple[str, Optional[str]]:
     """Check csv-file for number of records and last op id
 
-    :param str filename: path to the file to check
-    :return: str, str: datetime string of last record and last op id
+    :param filename: path to the file to check
+    :return: datetime string of last record and last op id
     """
     dtime = '2010-10-10'
     last_op_id = None
@@ -51,11 +53,21 @@ def get_continuation_point(filename):
 
 
 class HistoryDownloader:
-    def __init__(self, account: str, wrapper_url: str, api_node: str, no_aggregate: bool = False):
+    def __init__(
+        self,
+        account: str,
+        wrapper_url: str,
+        api_node: str,
+        no_aggregate: bool = False,
+        output_directory: Optional[str] = None,
+    ):
         self.account = account
-        self.transfers_filename = f'transfers-{self.account}.csv'
-        self.trades_filename = f"trades-{self.account}.csv"
-        self.global_settlements_filename = f"gs-{self.account}.csv"
+
+        out_dir = Path(output_directory) if output_directory is not None else Path(".")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        self.transfers_file = out_dir / Path(f'transfers-{self.account}.csv')
+        self.trades_file = out_dir / f"trades-{self.account}.csv"
+        self.global_settlements_file = out_dir / f"gs-{self.account}.csv"
 
         bitshares = BitShares(node=api_node)
         self.parser = Parser(bitshares, self.account)
@@ -64,12 +76,12 @@ class HistoryDownloader:
         self.no_aggregate = no_aggregate
 
     def fetch_transfers(self):
-        dtime, last_op_id = get_continuation_point(self.transfers_filename)
+        dtime, last_op_id = get_continuation_point(self.transfers_file)
         if not (dtime and last_op_id):
-            with open(self.transfers_filename, 'w') as fd:
+            with open(self.transfers_file, 'w') as fd:
                 fd.write(HEADER)
 
-        with open(self.transfers_filename, "a") as fd:
+        with open(self.transfers_file, "a") as fd:
             history = self.wrapper.get_transfers(from_date=dtime)
             while history:
                 for entry in history:
@@ -99,12 +111,12 @@ class HistoryDownloader:
                 history = self.wrapper.get_transfers(from_date=op_date)
 
     def fetch_trades(self):
-        dtime, last_op_id = get_continuation_point(self.trades_filename)
+        dtime, last_op_id = get_continuation_point(self.trades_file)
         if not (dtime and last_op_id):
-            with open(self.trades_filename, 'w') as fd:
+            with open(self.trades_file, 'w') as fd:
                 fd.write(HEADER)
 
-        with open(self.trades_filename, "a") as fd:
+        with open(self.trades_file, "a") as fd:
             history = self.wrapper.get_trades(from_date=dtime)
             aggregated_line = copy.deepcopy(LINE_DICT_TEMPLATE)
             while history:
@@ -172,12 +184,12 @@ class HistoryDownloader:
                 fd.write(LINE_TEMPLATE.format(**aggregated_line))
 
     def fetch_settlements_in_gs_state(self):
-        dtime, last_op_id = get_continuation_point(self.global_settlements_filename)
+        dtime, last_op_id = get_continuation_point(self.global_settlements_file)
         if not (dtime and last_op_id):
-            with open(self.global_settlements_filename, 'w') as fd:
+            with open(self.global_settlements_file, 'w') as fd:
                 fd.write(HEADER)
 
-        with open(self.global_settlements_filename, "a") as fd:
+        with open(self.global_settlements_file, "a") as fd:
             history = self.wrapper.get_global_settlements(from_date=dtime)
             while history:
                 for entry in history:
