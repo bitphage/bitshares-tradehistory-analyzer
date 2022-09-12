@@ -152,6 +152,7 @@ class Parser:
         sell_amount = Decimal(op_result_data['paid'][0]['amount']).scaleb(-sell_asset['precision'])
         buy_asset = Asset(op_result_data['received'][0]['asset_id'], bitshares_instance=self.bitshares)
         buy_amount = Decimal(op_result_data['received'][0]['amount']).scaleb(-buy_asset['precision'])
+        log.info(f'GS asset settle: {sell_amount} {sell_asset.symbol} -> {buy_amount} {buy_asset.symbol}')
         # TODO: can we also expect non-0 fee from operation_result?
         fee_asset = Asset(op['fee']['asset_id'], bitshares_instance=self.bitshares)
         fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
