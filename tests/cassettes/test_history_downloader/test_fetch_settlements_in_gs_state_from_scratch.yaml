@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: https://api.bitshares.ws/openexplorer/es/get_account_history?account_id=1.2.22&size=1&operation_type=0&sort_by=account_history.sequence&type=data&agg_field=operation_type
+  response:
+    body:
+      string: '{"detail":"Not Found"}'
+    headers:
+      Strict-Transport-Security:
+      - max-age=15768000
+      content-length:
+      - '22'
+      content-type:
+      - application/json
+      date:
+      - Mon, 12 Sep 2022 13:39:39 GMT
+      server:
+      - uvicorn
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - python-requests/2.28.1
+    method: GET
+    uri: https://api.bitshares.ws/openexplorer/es/account_history?account_id=1.2.12376&size=200&operation_type=17&sort_by=account_history.sequence&type=data&agg_field=operation_type&from_date=2010-10-10
+  response:
+    body:
+      string: '[{"account_history":{"id":"2.9.7510462","account":"1.2.12376","operation_id":"1.11.7320568","sequence":1420,"next":"2.9.7472851"},"operation_history":{"trx_in_block":0,"op_in_trx":0,"operation_result":"[1,\"1.4.639\"]","virtual_op":0,"op":"","op_object":{"fee":{"amount":733817,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":150000000,"asset_id":"1.3.113"}}},"operation_type":17,"operation_id_num":7320568,"block_data":{"block_num":12924762,"block_time":"2017-01-08T00:54:42","trx_id":"34c241465efbe117ca5c0f016cffccaa428857fc"}},{"account_history":{"id":"2.9.7686546","account":"1.2.12376","operation_id":"1.11.7495304","sequence":1487,"next":"2.9.7686413"},"operation_history":{"trx_in_block":0,"op_in_trx":0,"operation_result":"[1,\"1.4.647\"]","virtual_op":0,"op":"","op_object":{"fee":{"amount":733817,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":45000000,"asset_id":"1.3.113"}}},"operation_type":17,"operation_id_num":7495304,"block_data":{"block_num":13034488,"block_time":"2017-01-11T21:02:36","trx_id":"87f7f02e10d7da185b3cdb16801c359cc987dc1c"}},{"account_history":{"id":"2.9.40673268","account":"1.2.12376","operation_id":"1.11.40031883","sequence":3391,"next":"2.9.39530124"},"operation_history":{"trx_in_block":19,"op_in_trx":0,"operation_result":"[1,\"1.4.1509\"]","virtual_op":0,"op":"","op_object":{"fee":{"amount":60698,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":101767088,"asset_id":"1.3.103"}}},"operation_type":17,"operation_id_num":40031883,"block_data":{"block_num":18103726,"block_time":"2017-07-08T14:09:36","trx_id":"6f9421be11bd329b254cdbe7948bcd28084c9411"}},{"account_history":{"id":"2.9.655677451","account":"1.2.12376","operation_id":"1.11.637209941","sequence":6807,"next":"2.9.655676724"},"operation_history":{"trx_in_block":30,"op_in_trx":0,"operation_result":"[2,{\"amount\":1823425104,\"asset_id\":\"1.3.0\"}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":28945,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":9324617,"asset_id":"1.3.121"}}},"operation_type":17,"operation_id_num":637209941,"block_data":{"block_num":33212533,"block_time":"2018-12-18T10:27:09","trx_id":"a27ae3a4b4ea2528ca61ff79e0e09d83fd38d043"}},{"account_history":{"id":"2.9.787980388","account":"1.2.12376","operation_id":"1.11.767391266","sequence":6815,"next":"2.9.784271780"},"operation_history":{"trx_in_block":26,"op_in_trx":0,"operation_result":"[2,{\"amount\":\"6159812332\",\"asset_id\":\"1.3.0\"}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":126301,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":31500000,"asset_id":"1.3.121"}}},"operation_type":17,"operation_id_num":767391266,"block_data":{"block_num":35181827,"block_time":"2019-02-25T01:12:51","trx_id":"f311590360dde30972f48303fd2715f4635e32f2"}},{"account_history":{"id":"2.9.818166407","account":"1.2.12376","operation_id":"1.11.797068747","sequence":6819,"next":"2.9.817678060"},"operation_history":{"trx_in_block":28,"op_in_trx":0,"operation_result":"[2,{\"amount\":1173297587,\"asset_id\":\"1.3.0\"}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":126301,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":6000000,"asset_id":"1.3.121"}}},"operation_type":17,"operation_id_num":797068747,"block_data":{"block_num":35767387,"block_time":"2019-03-17T10:30:54","trx_id":"0bec1e4eb4ef6813c4d06e84fc6460dc6d1e8743"}},{"account_history":{"id":"2.9.1042558549","account":"1.2.12376","operation_id":"1.11.1017965736","sequence":7116,"next":"2.9.1042505205"},"operation_history":{"trx_in_block":5,"op_in_trx":0,"operation_result":"[1,\"1.4.6762\"]","virtual_op":0,"op":"","op_object":{"fee":{"amount":193611,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":2238832095,"asset_id":"1.3.113"}}},"operation_type":17,"operation_id_num":1017965736,"block_data":{"block_num":42951175,"block_time":"2019-11-22T23:33:15","trx_id":"dce4357ea71764d97991000e656f0fb3b271d7b9"}},{"account_history":{"id":"2.9.1126089639","account":"1.2.12376","operation_id":"1.11.1100736161","sequence":8071,"next":"2.9.1126088474"},"operation_history":{"trx_in_block":0,"op_in_trx":0,"operation_result":"[2,{\"amount\":200000,\"asset_id\":\"1.3.0\"}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":965218,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":200000,"asset_id":"1.3.5884"}}},"operation_type":17,"operation_id_num":1100736161,"block_data":{"block_num":53432028,"block_time":"2020-11-22T10:28:33","trx_id":"5ea02cda94794129021be4ef866c29dbd5efb0e6"}},{"account_history":{"id":"2.9.1211709875","account":"1.2.12376","operation_id":"1.11.1185951965","sequence":8808,"next":"2.9.1211707086"},"operation_history":{"trx_in_block":3,"op_in_trx":0,"operation_result":"[5,{\"paid\":[{\"amount\":1000000,\"asset_id\":\"1.3.113\"}],\"received\":[{\"amount\":69923826,\"asset_id\":\"1.3.0\"}],\"fees\":[{\"amount\":0,\"asset_id\":\"1.3.0\"}]}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":96521,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":1000000,"asset_id":"1.3.113"}}},"operation_type":17,"operation_id_num":1185951965,"block_data":{"block_num":65673102,"block_time":"2022-01-23T01:48:54","trx_id":"0b586918d007750fb12a23f4829cd4a1ec6130d9"}},{"account_history":{"id":"2.9.1211710217","account":"1.2.12376","operation_id":"1.11.1185952306","sequence":8809,"next":"2.9.1211709875"},"operation_history":{"trx_in_block":1,"op_in_trx":0,"operation_result":"[5,{\"paid\":[{\"amount\":1000000,\"asset_id\":\"1.3.113\"}],\"received\":[{\"amount\":69923826,\"asset_id\":\"1.3.0\"}],\"fees\":[{\"amount\":0,\"asset_id\":\"1.3.0\"}]}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":96521,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":1000000,"asset_id":"1.3.113"}}},"operation_type":17,"operation_id_num":1185952306,"block_data":{"block_num":65673160,"block_time":"2022-01-23T01:51:48","trx_id":"258e8092abcfc41bea2b35d86ed169d5c5f32998"}},{"account_history":{"id":"2.9.1243749448","account":"1.2.12376","operation_id":"1.11.1217835733","sequence":31758,"next":"2.9.1243305425"},"operation_history":{"trx_in_block":1,"op_in_trx":0,"operation_result":"[5,{\"paid\":[{\"amount\":100000000,\"asset_id\":\"1.3.113\"}],\"received\":[{\"amount\":\"13082524848\",\"asset_id\":\"1.3.0\"}],\"fees\":[{\"amount\":0,\"asset_id\":\"1.3.0\"}]}]","virtual_op":0,"op":"","op_object":{"fee":{"amount":96521,"asset_id":"1.3.0"},"account":"1.2.12376","extensions":[],"amount_":{"amount":100000000,"asset_id":"1.3.113"}}},"operation_type":17,"operation_id_num":1217835733,"block_data":{"block_num":71440368,"block_time":"2022-08-12T02:39:33","trx_id":"5fbad9f235ac0c7223c8dff2eec98e367aa27157"}}]'
+    headers:
+      Strict-Transport-Security:
+      - max-age=15768000
+      content-length:
+      - '6857'
+      content-type:
+      - application/json
+      date:
+      - Mon, 12 Sep 2022 13:39:39 GMT
+      server:
+      - uvicorn
+    status:
+      code: 200
+      message: OK
+version: 1
