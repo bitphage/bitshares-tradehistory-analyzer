@@ -177,4 +177,31 @@ class HistoryDownloader:
             with open(self.global_settlements_filename, 'w') as fd:
                 fd.write(HEADER)
 
-        raise NotImplementedError
+        with open(self.global_settlements_filename, "a") as fd:
+            history = self.wrapper.get_global_settlements(from_date=dtime)
+            while history:
+                for entry in history:
+                    op_id = entry['account_history']['operation_id']
+                    op_date = entry['block_data']['block_time']
+                    # Skip entries until last_op_id found
+                    if last_op_id and op_id != last_op_id:
+                        log.debug('skipping entry {}'.format(entry))
+                        continue
+                    elif last_op_id and op_id == last_op_id:
+                        # Ok, last_op_id found, let's start to write entries from the next one
+                        last_op_id = None
+                        log.debug('skipping entry {}'.format(entry))
+                        continue
+
+                    parsed_data = self.parser.parse_settle_entry(entry)
+                    fd.write(LINE_TEMPLATE.format(**parsed_data))
+
+                # Remember last op id for the next chunk
+                last_op_id = op_id
+
+                # Break `while` loop on least history chunk
+                if len(history) < self.wrapper.size:
+                    break
+
+                # Get next data chunk
+                history = self.wrapper.get_global_settlements(from_date=op_date)
