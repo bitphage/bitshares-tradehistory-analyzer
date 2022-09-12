@@ -9,7 +9,7 @@ from typing import Optional, Tuple, Union
 from bitshares import BitShares
 
 from bitshares_tradehistory_analyzer.consts import HEADER, LINE_DICT_TEMPLATE, LINE_TEMPLATE
-from bitshares_tradehistory_analyzer.parser import Parser
+from bitshares_tradehistory_analyzer.parser import Parser, UnsupportedSettleEntry
 from bitshares_tradehistory_analyzer.wrapper import Wrapper
 
 log = logging.getLogger(__name__)
@@ -205,7 +205,10 @@ class HistoryDownloader:
                         log.debug('skipping entry {}'.format(entry))
                         continue
 
-                    parsed_data = self.parser.parse_settle_entry(entry)
+                    try:
+                        parsed_data = self.parser.parse_settle_entry(entry)
+                    except UnsupportedSettleEntry:
+                        continue
                     fd.write(LINE_TEMPLATE.format(**parsed_data))
 
                 # Remember last op id for the next chunk
