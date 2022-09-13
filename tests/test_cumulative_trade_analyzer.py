@@ -25,6 +25,30 @@ def test_pair_trade_stats_dict_access():
     assert stats["USDT-BTC"] is stats1
 
 
+def test_pair_trade_stats_price():
+    stats = PairTradeStats(
+        spent_asset="USDT", spent_amount=Decimal("10000"), acquired_asset="BTC", acquired_amount=Decimal("2")
+    )
+    assert stats.price == Decimal("5000")
+    assert stats.price_inverted == Decimal("1") / Decimal("5000")
+
+
+def test_pair_trade_stats_price_zero_division():
+    stats = PairTradeStats(
+        spent_asset="USDT", spent_amount=Decimal("10000"), acquired_asset="BTC", acquired_amount=Decimal("0")
+    )
+    assert stats.price == Decimal("Inf")
+    assert stats.price_inverted == ZERO
+
+
+def test_pair_trade_stats_inverted_price_zero_division():
+    stats = PairTradeStats(
+        spent_asset="USDT", spent_amount=Decimal("0"), acquired_asset="BTC", acquired_amount=Decimal("1")
+    )
+    assert stats.price == ZERO
+    assert stats.price_inverted == Decimal("Inf")
+
+
 def test_process_deposit(analyzer):
     ts = pd.Timestamp("2021-01-01", tz="UTC")
     trade = Trade(
@@ -120,3 +144,250 @@ def test_run_analysis_time_ranged(analyzer):
     stats = analyzer.transfer_stats["BTC"]
     assert stats.deposit_amount == Decimal("0.2")
     assert stats.last_transfer_timestamp == trade_ts_in_between
+
+
+def test_calc_trade_delta_1(analyzer):
+    """Partially sold"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("0.5")
+    acquired_usdt = Decimal("6000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    assert "BTC-USDT" not in analyzer.trade_delta_stats
+    stats = analyzer.trade_delta_stats["USDT-BTC"]
+    assert stats.spent_asset == "USDT"
+    assert stats.acquired_asset == "BTC"
+    assert stats.spent_amount == spent_usdt - acquired_usdt
+    assert stats.acquired_amount == acquired_btc - spent_btc
+
+
+def test_calc_trade_delta_2(analyzer):
+    """Sold everything with loss"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("1")
+    acquired_usdt = Decimal("9000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    assert "BTC-USDT" not in analyzer.trade_delta_stats
+    stats = analyzer.trade_delta_stats["USDT-BTC"]
+    assert stats.spent_asset == "USDT"
+    assert stats.acquired_asset == "BTC"
+    assert stats.spent_amount == spent_usdt - acquired_usdt
+    assert stats.acquired_amount == acquired_btc - spent_btc
+
+
+def test_calc_trade_delta_3(analyzer):
+    """Sold which was bought + some more"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("2")
+    acquired_usdt = Decimal("22000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    assert "USDT-BTC" not in analyzer.trade_delta_stats
+    stats = analyzer.trade_delta_stats["BTC-USDT"]
+    assert stats.spent_asset == "BTC"
+    assert stats.acquired_asset == "USDT"
+    assert stats.spent_amount == spent_btc - acquired_btc
+    assert stats.acquired_amount == acquired_usdt - spent_usdt
+
+
+def test_calc_trade_delta_4(analyzer):
+    """Sold which was bought for profit"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("1")
+    acquired_usdt = Decimal("20000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    assert "USDT-BTC" not in analyzer.trade_delta_stats
+    stats = analyzer.trade_delta_stats["BTC-USDT"]
+    assert stats.spent_asset == "BTC"
+    assert stats.acquired_asset == "USDT"
+    assert stats.spent_amount == spent_btc - acquired_btc
+    assert stats.acquired_amount == acquired_usdt - spent_usdt
+
+
+def test_calc_trade_delta_5(analyzer):
+    """Sold everything with 0 result"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("1")
+    acquired_usdt = Decimal("10000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    assert len(analyzer.trade_delta_stats) == 0
+
+
+def test_calc_trade_delta_6(analyzer):
+    """Sold everything with loss + some more, with loss in total"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("1.1")
+    acquired_usdt = Decimal("9000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    stats = analyzer.trade_delta_stats["USDT-BTC"]
+    assert stats.spent_asset == "USDT"
+    assert stats.acquired_asset == "BTC"
+    assert stats.spent_amount == spent_usdt - acquired_usdt
+    assert stats.acquired_amount == ZERO
+
+    stats = analyzer.trade_delta_stats["BTC-USDT"]
+    assert stats.spent_asset == "BTC"
+    assert stats.acquired_asset == "USDT"
+    assert stats.spent_amount == spent_btc - acquired_btc
+    assert stats.acquired_amount == ZERO
+
+
+def test_calc_trade_delta_7(analyzer):
+    """Sold everything with loss + some more, resulting in same USDT amount"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("1.1")
+    acquired_usdt = Decimal("10000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    assert "USDT-BTC" not in analyzer.trade_delta_stats
+    stats = analyzer.trade_delta_stats["BTC-USDT"]
+    assert stats.spent_asset == "BTC"
+    assert stats.acquired_asset == "USDT"
+    assert stats.spent_amount == spent_btc - acquired_btc
+    assert stats.acquired_amount == acquired_usdt - spent_usdt
+
+
+def test_calc_trade_delta_8(analyzer):
+    """Partially sold which was bought, fully covering initially invested funds"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("0.9")
+    acquired_usdt = Decimal("10000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    assert "BTC-USDT" not in analyzer.trade_delta_stats
+    stats = analyzer.trade_delta_stats["USDT-BTC"]
+    assert stats.spent_asset == "USDT"
+    assert stats.acquired_asset == "BTC"
+    assert stats.spent_amount == spent_usdt - acquired_usdt
+    assert stats.acquired_amount == acquired_btc - spent_btc
+
+
+def test_calc_trade_delta_9(analyzer):
+    """Partially sold which was bought with profit covering initial investment + more"""
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("0.5")
+    acquired_usdt = Decimal("20000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    stats = analyzer.trade_delta_stats["USDT-BTC"]
+    assert stats.spent_asset == "USDT"
+    assert stats.acquired_asset == "BTC"
+    assert stats.spent_amount == ZERO
+    assert stats.acquired_amount == acquired_btc - spent_btc
+
+    stats = analyzer.trade_delta_stats["BTC-USDT"]
+    assert stats.spent_asset == "BTC"
+    assert stats.acquired_asset == "USDT"
+    assert stats.spent_amount == ZERO
+    assert stats.acquired_amount == acquired_usdt - spent_usdt
+
+
+def test_trade_delta_results(analyzer):
+    spent_usdt = Decimal("10000")
+    acquired_btc = Decimal("1")
+    spent_btc = Decimal("0.5")
+    acquired_usdt = Decimal("20000")
+
+    analyzer.trade_stats = {
+        "USDT-BTC": PairTradeStats(
+            spent_asset="USDT", acquired_asset="BTC", spent_amount=spent_usdt, acquired_amount=acquired_btc
+        ),
+        "BTC-USDT": PairTradeStats(
+            spent_asset="BTC", spent_amount=spent_btc, acquired_asset="USDT", acquired_amount=acquired_usdt
+        ),
+    }
+    analyzer.calc_trade_delta()
+    df = analyzer.trade_delta_results
+    assert df is not None
+    btc_result = df.loc[df["Spent Asset"] == "BTC"]
+    assert btc_result["Spent Amount"].item() == ZERO
+    assert btc_result["Acquired Amount"].item() == acquired_usdt - spent_usdt
+
+    usdt_result = df.loc[df["Spent Asset"] == "USDT"]
+    assert usdt_result["Spent Amount"].item() == ZERO
+    assert usdt_result["Acquired Amount"].item() == acquired_btc - spent_btc

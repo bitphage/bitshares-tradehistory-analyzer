@@ -6,6 +6,10 @@ import pandas as pd
 from bitshares_tradehistory_analyzer.cumulative_trade_analyzer import CumulativeAnalyzer
 
 
+def fmt_price(price):
+    return f"{price:.10f}"
+
+
 @click.command()
 @click.argument("csv_file", nargs=-1)
 @click.option("--start", help="Start analysis data, in pandas format e.g. '2021-06-01 12:00'")
@@ -33,6 +37,8 @@ def main(csv_file, start, end):
     click.echo(analyzer.transfer_results.to_string())
     click.echo("Trading stats:")
     click.echo(analyzer.trade_results.to_string())
+    click.echo("Trading delta stats:")
+    click.echo(analyzer.trade_delta_results.to_string(formatters={"Price": fmt_price, "Inverted Price": fmt_price}))
 
 
 if __name__ == '__main__':
