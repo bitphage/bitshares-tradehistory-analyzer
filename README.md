@@ -88,7 +88,6 @@ into a single entry. Also, it allows to limit a time range for analisys by `--st
 Example output:
 
 ```
-% ./bitshares_tradehistory_analyzer/cumulative_analyzer_cli.py transfers-id-b0t1.csv trades-id-b0t1.csv
 Asset transfer stats:
                Asset    Deposited    Withdrawn         Delta   Last Transfer Timestamp
 0                CNY    3005.6267     317.8022     2687.8245 2020-02-01 10:26:45+00:00
@@ -115,6 +114,14 @@ Trading stats:
 8             BTS    1172.68463     RUDEX.USDT       20.665472 2020-04-18 13:26:30+00:00
 9      RUDEX.USDT     20.665472            BTS      1222.80901 2020-04-20 07:00:42+00:00
 10            BTS     611.65091  ECURREX.YMRUB         1945.05 2020-09-05 06:02:57+00:00
+Trading delta stats:
+     Spent Asset Spent Amount Acquired Asset Acquired Amount         Price     Inverted Price      Last Trade Timestamp
+0            CNY    2687.3247            BTS      7478.67581  0.3593316208       2.7829446177 2020-02-01 10:25:09+00:00
+1          RUBLE   1475.60181  ECURREX.YMRUB         1638.90  0.9003611020       1.1106654850 2020-09-08 22:00:54+00:00
+2          RUBLE   5223.69820            BTS      3641.97014  1.4343056091       0.6972014846 2020-09-11 03:56:57+00:00
+3      RUDEX.BTC   0.00378297            BTS      1536.58416  0.0000024619  406184.6009881125 2020-04-11 15:21:39+00:00
+4  ECURREX.YMRUB       959.03            BTS      1489.28177  0.6439547031       1.5529042574 2020-09-05 06:02:57+00:00
+5     RUDEX.USDT     0.000000            BTS        50.12438  0.0000000000           Infinity 2020-04-20 07:00:42+00:00
 ```
 
 
