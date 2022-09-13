@@ -88,6 +88,7 @@ into a single entry. Also, it allows to limit a time range for analisys by `--st
 Example output:
 
 ```
+./bitshares_tradehistory_analyzer/cumulative_analyzer_cli.py transfers-id-b0t1.csv trades-id-b0t1.csv
 Asset transfer stats:
                Asset    Deposited    Withdrawn         Delta   Last Transfer Timestamp
 0                CNY    3005.6267     317.8022     2687.8245 2020-02-01 10:26:45+00:00
