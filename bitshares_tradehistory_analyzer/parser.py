@@ -142,44 +142,48 @@ class Parser:
         op_id = entry['account_history']['operation_id']
         op = self.load_op(entry)
         operation_result = self.load_operation_result(entry)
-        if operation_result[0] != 5:
+        op_number_in_result, op_result_data = operation_result
+
+        if op_number_in_result == 5:
+            # TODO: is it possible to have more than 1 entry in 'paid'/'received'???
+            sell_amount = Amount(op_result_data['paid'][0], bitshares_instance=self.bitshares)
+            buy_amount = Amount(op_result_data['received'][0], bitshares_instance=self.bitshares)
+        elif op_number_in_result == 2:
+            sell_amount = Amount(op['amount_'], bitshares_instance=self.bitshares)
+            buy_amount = Amount(op_result_data, bitshares_instance=self.bitshares)
+        else:
             # We are not interested in regular settlements, because their results are filled orders
             raise UnsupportedSettleEntry
+        log.info(
+            f'GS asset settle: {sell_amount.amount} {sell_amount.symbol} -> {buy_amount.amount} ' f'{buy_amount.symbol}'
+        )
 
-        op_result_data = operation_result[1]
-        # TODO: is it possible to have more than 1 entry in 'paid'/'received'???
-        sell_asset = Asset(op_result_data['paid'][0]['asset_id'], bitshares_instance=self.bitshares)
-        sell_amount = Decimal(op_result_data['paid'][0]['amount']).scaleb(-sell_asset['precision'])
-        buy_asset = Asset(op_result_data['received'][0]['asset_id'], bitshares_instance=self.bitshares)
-        buy_amount = Decimal(op_result_data['received'][0]['amount']).scaleb(-buy_asset['precision'])
-        log.info(f'GS asset settle: {sell_amount} {sell_asset.symbol} -> {buy_amount} {buy_asset.symbol}')
         # TODO: can we also expect non-0 fee from operation_result?
-        fee_asset = Asset(op['fee']['asset_id'], bitshares_instance=self.bitshares)
-        fee_amount = Decimal(op['fee']['amount']).scaleb(-fee_asset['precision'])
+        fee = Amount(op['fee'], bitshares_instance=self.bitshares)
 
         # Subtract fee from buy_amount
         # For ccgains, any fees for the transaction should already have been subtracted from *amount*, but included
         # in *cost*.
-        if fee_asset.symbol == buy_asset.symbol:
-            buy_amount -= fee_amount
+        if fee.symbol == buy_amount.symbol:
+            buy_amount -= fee
 
         data = copy.deepcopy(LINE_DICT_TEMPLATE)
         data['kind'] = 'Trade'
-        data['sell_cur'] = sell_asset.symbol
-        data['sell_amount'] = sell_amount
-        data['buy_cur'] = buy_asset.symbol
-        data['buy_amount'] = buy_amount
-        data['fee_cur'] = fee_asset.symbol
-        data['fee_amount'] = fee_amount
+        data['sell_cur'] = sell_amount.symbol
+        data['sell_amount'] = sell_amount.amount
+        data['buy_cur'] = buy_amount.symbol
+        data['buy_amount'] = buy_amount.amount
+        data['fee_cur'] = fee.symbol
+        data['fee_amount'] = fee.amount
         data['comment'] = op_id
-        data['prec'] = max(sell_asset['precision'], buy_asset['precision'])
+        data['prec'] = max(sell_amount.asset['precision'], buy_amount.asset['precision'])
 
         # Prevent division by zero
         price = Decimal('0')
         price_inverted = Decimal('0')
         if sell_amount and buy_amount:
-            price = buy_amount / sell_amount
-            price_inverted = sell_amount / buy_amount
+            price = buy_amount.amount / sell_amount.amount
+            price_inverted = sell_amount.amount / buy_amount.amount
 
         data['price'] = price
         data['price_inverted'] = price_inverted
