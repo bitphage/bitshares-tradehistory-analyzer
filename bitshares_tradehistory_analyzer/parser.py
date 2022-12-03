@@ -144,11 +144,16 @@ class Parser:
         operation_result = self.load_operation_result(entry)
         op_number_in_result, op_result_data = operation_result
 
+        # Settlement can be old-style GS, or new style regular settlement
         if op_number_in_result == 5:
+            if "new_objects" in op_result_data:
+                # New-style regular settlement, results are filled orders and available as trade
+                raise UnsupportedSettleEntry
             # TODO: is it possible to have more than 1 entry in 'paid'/'received'???
             sell_amount = Amount(op_result_data['paid'][0], bitshares_instance=self.bitshares)
             buy_amount = Amount(op_result_data['received'][0], bitshares_instance=self.bitshares)
         elif op_number_in_result == 2:
+            # Old-style GS settle
             sell_amount = Amount(op['amount_'], bitshares_instance=self.bitshares)
             buy_amount = Amount(op_result_data, bitshares_instance=self.bitshares)
         else:

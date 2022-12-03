@@ -51,6 +51,11 @@ def settlement_regular_entry():
 
 
 @pytest.fixture()
+def settlement_regular_entry_new():
+    return load_full_json('tests/fixture_data/settlement_regular_new.json')
+
+
+@pytest.fixture()
 def settlement_gs_entry_new_style():
     return load_first_json_entry('tests/fixture_data/settlement_gs.json')
 
@@ -79,6 +84,11 @@ def test_parse_trade_entry(parser, trade_entry, trade_entry_null_op_object):
 def test_parse_regular_settle_entry(parser, settlement_regular_entry):
     with pytest.raises(UnsupportedSettleEntry):
         parser.parse_settle_entry(settlement_regular_entry)
+
+
+def test_parse_regular_settle_entry_new_style(parser, settlement_regular_entry_new):
+    with pytest.raises(UnsupportedSettleEntry):
+        parser.parse_settle_entry(settlement_regular_entry_new)
 
 
 def test_parse_gs_settle_entry_old(parser, settlement_gs_entry_old_style):
